@@ -1,0 +1,245 @@
+/* プレミアム機能のスタイル */
+
+/* 同期ステータスインジケーター */
+.sync-status-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    transition: all 0.3s;
+    z-index: 100;
+}
+
+.sync-status-indicator.syncing .sync-icon {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* AI感情分析レポート */
+.emotion-report-card {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-top: 24px;
+}
+
+.emotion-insight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.emotion-insight-icon {
+    font-size: 24px;
+}
+
+.emotion-insight-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.emotion-trend-graph {
+    height: 200px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    position: relative;
+}
+
+/* 高度な検索UI */
+.advanced-search-container {
+    position: relative;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    margin-top: 8px;
+    padding: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+}
+
+.search-suggestion-item {
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.search-suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.suggestion-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.suggestion-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.suggestion-similarity {
+    font-size: 11px;
+    color: var(--primary);
+}
+
+/* タグクラウド */
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag-item {
+    padding: 6px 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tag-item:hover {
+    background: rgba(99, 102, 241, 0.2);
+    transform: translateY(-2px);
+}
+
+/* プレミアム機能ロック */
+.premium-feature-lock {
+    position: relative;
+    filter: blur(3px);
+    pointer-events: none;
+}
+
+.premium-feature-lock::after {
+    content: '👑 プレミアム機能';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--gradient-1);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 20px;
+    font-weight: 600;
+    filter: blur(0);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* メンタルヘルス推奨カード */
+.mental-health-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.recommendation-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.recommendation-content h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.recommendation-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* オフラインインジケーター */
+.offline-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+    z-index: 1000;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .sync-status-indicator {
+        top: auto;
+        bottom: 80px;
+        left: 20px;
+        right: 20px;
+    }
+
+    .emotion-report-card {
+        padding: 20px;
+    }
+
+    .search-suggestions {
+        max-height: 200px;
+    }
+}
