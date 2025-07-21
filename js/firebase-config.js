@@ -1,12 +1,12 @@
 // Firebase設定と初期化
-// 注意: 実際の値はFirebaseコンソールから取得してください
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyBqOMvegX7nfUrtVtTSpVNYpiq1BJTAM0k",
+    authDomain: "memory-fragments.firebaseapp.com",
+    projectId: "memory-fragments",
+    storageBucket: "memory-fragments.firebasestorage.app",
+    messagingSenderId: "798156189875",
+    appId: "1:798156189875:web:404069566f9fa68a8580c6",
+    measurementId: "G-8T2KT0Z9ZE"
 };
 
 // Firebaseの初期化
