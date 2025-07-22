@@ -17,8 +17,18 @@ class StripePayment {
             return;
         }
 
-        this.stripe = Stripe(this.publishableKey);
-        this.setupEventListeners();
+        // Stripeキーが設定されていない場合はスキップ
+        if (this.publishableKey.includes('xxxxx')) {
+            console.log('Stripe: テストキーが設定されていません。決済機能は無効です。');
+            return;
+        }
+
+        try {
+            this.stripe = Stripe(this.publishableKey);
+            this.setupEventListeners();
+        } catch (error) {
+            console.error('Stripe初期化エラー:', error);
+        }
     }
 
     setupEventListeners() {
@@ -176,5 +186,9 @@ window.StripePayment = StripePayment;
 
 // ページ読み込み時に初期化
 document.addEventListener('DOMContentLoaded', () => {
-    window.stripePayment = new StripePayment();
+    try {
+        window.stripePayment = new StripePayment();
+    } catch (error) {
+        console.error('StripePayment初期化エラー:', error);
+    }
 });
