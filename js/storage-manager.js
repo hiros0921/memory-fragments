@@ -90,10 +90,54 @@ class StorageManager {
         if (this.isCloudEnabled && this.authManager && this.authManager.isAuthenticated()) {
             try {
                 const user = this.authManager.getCurrentUser();
+                
+                // ユーザーがnullでないことを確認
+                if (!user || !user.uid) {
+                    throw new Error('User not authenticated');
+                }
+                
+                let memoryToSave = { ...memory };
+                
+                // 画像がある場合はFirebase Storageにアップロード
+                if (memory.image && memory.image.startsWith('data:')) {
+                    try {
+                        console.log('Uploading image to Firebase Storage...');
+                        const storage = firebase.storage();
+                        
+                        // base64をBlobに変換
+                        const base64Data = memory.image.split(',')[1];
+                        const byteCharacters = atob(base64Data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                        
+                        // Storage参照を作成
+                        const imageRef = storage.ref()
+                            .child(`images/${user.uid}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
+                        
+                        // アップロード
+                        const snapshot = await imageRef.put(blob);
+                        const imageUrl = await snapshot.ref.getDownloadURL();
+                        
+                        // メモリーオブジェクトを更新
+                        memoryToSave.imageUrl = imageUrl;
+                        delete memoryToSave.image; // base64データは削除
+                        
+                        console.log('Image uploaded successfully:', imageUrl);
+                    } catch (imageError) {
+                        console.error('Image upload failed:', imageError);
+                        delete memoryToSave.image; // 画像アップロード失敗時は画像なしで続行
+                    }
+                }
+                
+                // Firestoreに保存（画像URLのみ）
                 const docRef = await db.collection('users')
                     .doc(user.uid)
                     .collection('memories')
-                    .add(memory);
+                    .add(memoryToSave);
                 
                 memory.id = docRef.id;
                 this.memories.unshift(memory);
@@ -103,7 +147,7 @@ class StorageManager {
                     memoryCount: firebase.firestore.FieldValue.increment(1)
                 });
                 
-                // ローカルにも保存
+                // ローカルにも保存（元の画像データを含む）
                 localStorage.setItem('memories', JSON.stringify(this.memories));
                 
                 return {
@@ -113,7 +157,18 @@ class StorageManager {
                 };
             } catch (error) {
                 console.error('Cloud save error:', error);
-                // クラウド保存失敗時はローカルに保存
+                
+                // 権限エラーの場合
+                if (error.code === 'permission-denied') {
+                    return {
+                        success: false,
+                        error: 'PERMISSION_DENIED',
+                        message: 'Firestoreへの保存権限がありません。管理者に連絡してください。'
+                    };
+                }
+                
+                // その他のエラーの場合はローカルに保存を試みる
+                console.log('Falling back to local storage...');
             }
         }
 

@@ -111,6 +111,11 @@ class CloudSyncManager {
         try {
             const user = this.authManager.getCurrentUser();
             
+            // ユーザーがnullでないことを確認
+            if (!user || !user.uid) {
+                throw new Error('User not authenticated');
+            }
+            
             // ローカルの未同期データを取得
             const unsyncedMemories = await this.getUnsyncedMemories();
             
@@ -119,15 +124,54 @@ class CloudSyncManager {
                 
                 // バッチ処理で効率的に同期
                 const batch = db.batch();
+                const storage = firebase.storage();
                 
                 for (const memory of unsyncedMemories) {
+                    let memoryToSync = { ...memory };
+                    
+                    // 画像がある場合はFirebase Storageにアップロード
+                    if (memory.image && memory.image.startsWith('data:')) {
+                        try {
+                            console.log('Uploading image to Firebase Storage...');
+                            
+                            // base64をBlobに変換
+                            const base64Data = memory.image.split(',')[1];
+                            const byteCharacters = atob(base64Data);
+                            const byteNumbers = new Array(byteCharacters.length);
+                            for (let i = 0; i < byteCharacters.length; i++) {
+                                byteNumbers[i] = byteCharacters.charCodeAt(i);
+                            }
+                            const byteArray = new Uint8Array(byteNumbers);
+                            const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                            
+                            // Storage参照を作成
+                            const imageRef = storage.ref()
+                                .child(`images/${user.uid}/${memory.id}_${Date.now()}.jpg`);
+                            
+                            // アップロード
+                            const snapshot = await imageRef.put(blob);
+                            const imageUrl = await snapshot.ref.getDownloadURL();
+                            
+                            // メモリーオブジェクトを更新（画像データをURLに置き換え）
+                            memoryToSync.imageUrl = imageUrl;
+                            delete memoryToSync.image; // base64データは削除
+                            
+                            console.log('Image uploaded successfully:', imageUrl);
+                        } catch (imageError) {
+                            console.error('Image upload failed:', imageError);
+                            // 画像アップロードが失敗してもメモリー自体は保存を続行
+                            delete memoryToSync.image;
+                        }
+                    }
+                    
                     const docRef = db.collection('users')
                         .doc(user.uid)
                         .collection('memories')
-                        .doc(memory.id);
+                        .doc(memory.id.toString());
                     
+                    // Firestoreに保存（画像URLのみ）
                     batch.set(docRef, {
-                        ...memory,
+                        ...memoryToSync,
                         synced: true,
                         lastSyncedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -147,7 +191,14 @@ class CloudSyncManager {
             
         } catch (error) {
             console.error('Sync failed:', error);
-            this.notifySyncStatus('error');
+            
+            // 権限エラーの場合は特別な処理
+            if (error.code === 'permission-denied') {
+                console.error('Firestore permission denied. Please check Firestore rules.');
+                this.notifySyncStatus('permission-error');
+            } else {
+                this.notifySyncStatus('error');
+            }
         } finally {
             this.isSyncing = false;
         }
@@ -283,28 +334,67 @@ class CloudSyncManager {
 
         const user = this.authManager.getCurrentUser();
         
+        if (!user || !user.uid) {
+            console.error('User not authenticated');
+            return;
+        }
+        
+        let dataToSync = { ...item.data };
+        
+        // 画像がある場合はFirebase Storageにアップロード
+        if (item.action !== 'delete' && dataToSync.image && dataToSync.image.startsWith('data:')) {
+            try {
+                const storage = firebase.storage();
+                
+                // base64をBlobに変換
+                const base64Data = dataToSync.image.split(',')[1];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                
+                // Storage参照を作成
+                const imageRef = storage.ref()
+                    .child(`images/${user.uid}/${dataToSync.id}_${Date.now()}.jpg`);
+                
+                // アップロード
+                const snapshot = await imageRef.put(blob);
+                const imageUrl = await snapshot.ref.getDownloadURL();
+                
+                // データを更新
+                dataToSync.imageUrl = imageUrl;
+                delete dataToSync.image; // base64データは削除
+            } catch (imageError) {
+                console.error('Image upload failed:', imageError);
+                delete dataToSync.image;
+            }
+        }
+        
         switch (item.action) {
             case 'create':
                 await db.collection('users')
                     .doc(user.uid)
                     .collection('memories')
-                    .doc(item.data.id)
-                    .set(item.data);
+                    .doc(dataToSync.id.toString())
+                    .set(dataToSync);
                 break;
                 
             case 'update':
                 await db.collection('users')
                     .doc(user.uid)
                     .collection('memories')
-                    .doc(item.data.id)
-                    .update(item.data);
+                    .doc(dataToSync.id.toString())
+                    .update(dataToSync);
                 break;
                 
             case 'delete':
                 await db.collection('users')
                     .doc(user.uid)
                     .collection('memories')
-                    .doc(item.id)
+                    .doc(item.id.toString())
                     .delete();
                 break;
         }
