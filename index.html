@@ -1802,6 +1802,8 @@
                     timestamp: new Date().toISOString()
                 };
 
+                console.log('Memory object created:', memory);
+
                 if (imageFile) {
                     try {
                         // ファイルサイズを確認
@@ -1831,8 +1833,10 @@
                             });
                         } else {
                             // 2MB以下の場合は従来通りローカルストレージを使用
+                            console.log('Processing image with FileReader...');
                             const reader = new FileReader();
                             reader.onload = (e) => {
+                                console.log('FileReader onload triggered');
                                 memory.image = e.target.result;
                                 memory.imageStorage = 'localStorage';
                                 this.addMemory(memory);
@@ -1855,8 +1859,10 @@
             }
 
             addMemory(memory) {
+                console.log('addMemory called with:', memory);
                 // ストレージマネージャーを使用して保存
                 const result = this.storageManager.saveMemory(memory);
+                console.log('Save result:', result);
                 
                 if (result.success) {
                     this.memories = this.storageManager.memories;
