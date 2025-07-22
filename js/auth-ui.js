@@ -214,15 +214,61 @@ class AuthUI {
 
     // パスワードリセット画面
     showResetPassword() {
-        const email = prompt('パスワードリセット用のメールアドレスを入力してください');
-        if (email) {
-            this.authManager.resetPassword(email).then(result => {
-                if (result.success) {
-                    this.showMessage(result.message, 'success');
-                } else {
-                    this.showMessage(result.error, 'error');
-                }
-            });
+        const authCard = document.querySelector('.auth-card');
+        if (authCard) {
+            authCard.innerHTML = `
+                <div class="auth-header">
+                    <h1 class="auth-title">パスワードリセット</h1>
+                    <p class="auth-subtitle">
+                        メールアドレスを入力してください。<br>
+                        パスワードリセット用のリンクをお送りします。
+                    </p>
+                </div>
+
+                <div id="authMessage"></div>
+
+                <form id="resetPasswordForm" class="auth-form">
+                    <div class="auth-input-group">
+                        <label class="auth-label">メールアドレス</label>
+                        <input type="email" class="auth-input" id="resetEmail" required 
+                               placeholder="your@email.com">
+                    </div>
+                    <button type="submit" class="auth-button auth-button-primary">
+                        リセットメールを送信
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>
+                        <a href="#" class="auth-link" onclick="authUI.switchView('signin')">
+                            ログイン画面に戻る
+                        </a>
+                    </p>
+                </div>
+            `;
+
+            // イベントリスナーの設定
+            const resetForm = document.getElementById('resetPasswordForm');
+            if (resetForm) {
+                resetForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('resetEmail').value;
+                    
+                    this.showLoading();
+                    const result = await this.authManager.resetPassword(email);
+                    this.hideLoading();
+                    
+                    if (result.success) {
+                        this.showMessage(result.message, 'success');
+                        // 3秒後にログイン画面に戻る
+                        setTimeout(() => {
+                            this.switchView('signin');
+                        }, 3000);
+                    } else {
+                        this.showMessage(result.error, 'error');
+                    }
+                });
+            }
         }
     }
 
