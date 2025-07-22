@@ -30,6 +30,12 @@ self.addEventListener('install', event => {
 
 // フェッチリクエストの処理
 self.addEventListener('fetch', event => {
+    // chrome-extension:// スキームのリクエストは除外
+    const url = new URL(event.request.url);
+    if (url.protocol === 'chrome-extension:') {
+        return;
+    }
+    
     event.respondWith(
         caches.match(event.request)
             .then(response => {
@@ -49,10 +55,19 @@ self.addEventListener('fetch', event => {
                         // レスポンスをクローンしてキャッシュ
                         const responseToCache = response.clone();
 
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            });
+                        // http(s)のリクエストのみキャッシュする
+                        if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
+                            caches.open(CACHE_NAME)
+                                .then(cache => {
+                                    cache.put(event.request, responseToCache)
+                                        .catch(err => {
+                                            console.error('Cache put error:', err);
+                                        });
+                                })
+                                .catch(err => {
+                                    console.error('Cache open error:', err);
+                                });
+                        }
 
                         return response;
                     }
