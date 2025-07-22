@@ -1805,6 +1805,7 @@
                 console.log('Memory object created:', memory);
 
                 if (imageFile) {
+                    console.log('Image file detected:', imageFile.name, imageFile.type, imageFile.size);
                     try {
                         // ファイルサイズを確認
                         const fileSizeInMB = imageFile.size / (1024 * 1024);
@@ -1812,6 +1813,7 @@
                         
                         // 画像タイプの確認
                         if (!imageFile.type.startsWith('image/')) {
+                            console.error('Invalid file type:', imageFile.type);
                             this.showNotification('画像ファイルを選択してください', 'error');
                             return;
                         }
@@ -1834,18 +1836,29 @@
                         } else {
                             // 2MB以下の場合は従来通りローカルストレージを使用
                             console.log('Processing image with FileReader...');
+                            console.log('Creating FileReader instance');
                             const reader = new FileReader();
+                            
                             reader.onload = (e) => {
                                 console.log('FileReader onload triggered');
+                                console.log('Result type:', typeof e.target.result);
+                                console.log('Result length:', e.target.result.length);
                                 memory.image = e.target.result;
                                 memory.imageStorage = 'localStorage';
+                                console.log('Calling addMemory from FileReader onload');
                                 this.addMemory(memory);
                             };
+                            
                             reader.onerror = (error) => {
                                 console.error('FileReader error:', error);
                                 this.showNotification('画像の読み込みに失敗しました', 'error');
+                                // エラーでも画像なしで保存を続行
+                                this.addMemory(memory);
                             };
+                            
+                            console.log('Starting readAsDataURL');
                             reader.readAsDataURL(imageFile);
+                            console.log('readAsDataURL called');
                         }
                     } catch (error) {
                         console.error('Image processing error:', error);
