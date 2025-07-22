@@ -166,6 +166,30 @@ class AuthManager {
         this.authStateListeners.push(callback);
     }
 
+    // デモモードの開始
+    startDemoMode() {
+        console.log('Starting demo mode...');
+        // デモモードでは認証をスキップしてローカルストレージを使用
+        const demoUser = {
+            uid: 'demo-user',
+            email: 'demo@memory-fragments.com',
+            displayName: 'デモユーザー',
+            isDemo: true,
+            plan: 'free'
+        };
+        
+        // デモユーザー情報を保存
+        this.currentUser = demoUser;
+        localStorage.setItem('currentUserId', demoUser.uid);
+        localStorage.setItem('currentUserName', demoUser.displayName);
+        localStorage.setItem('isDemoMode', 'true');
+        
+        // 認証状態変更を通知
+        this.notifyAuthStateChange(true);
+        
+        return demoUser;
+    }
+
     // エラーメッセージの日本語化
     getErrorMessage(errorCode) {
         const errorMessages = {
