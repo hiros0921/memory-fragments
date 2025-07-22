@@ -65,10 +65,11 @@ class AuthManager {
             });
 
             // ウェルカムメール送信（オプション）
-            await this.sendWelcomeEmail(result.user);
+            // await this.sendWelcomeEmail(result.user);
 
             return { success: true, user: result.user };
         } catch (error) {
+            console.error('SignUp error:', error);
             return { success: false, error: this.getErrorMessage(error.code) };
         }
     }
@@ -78,10 +79,14 @@ class AuthManager {
         try {
             const result = await auth.signInWithEmailAndPassword(email, password);
             
-            // 最終ログイン時刻を更新
-            await db.collection('users').doc(result.user.uid).update({
-                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            // 最終ログイン時刻を更新（Firestoreにユーザードキュメントがある場合のみ）
+            try {
+                await db.collection('users').doc(result.user.uid).update({
+                    lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.log('User document may not exist yet:', error);
+            }
 
             return { success: true, user: result.user };
         } catch (error) {
@@ -98,10 +103,14 @@ class AuthManager {
             
             const result = await auth.signInWithPopup(provider);
             
-            // 最終ログイン時刻を更新
-            await db.collection('users').doc(result.user.uid).update({
-                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            // 最終ログイン時刻を更新（Firestoreにユーザードキュメントがある場合のみ）
+            try {
+                await db.collection('users').doc(result.user.uid).update({
+                    lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.log('User document may not exist yet:', error);
+            }
 
             return { success: true, user: result.user };
         } catch (error) {

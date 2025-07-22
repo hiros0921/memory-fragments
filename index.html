@@ -1769,6 +1769,8 @@
                 const category = document.getElementById('memoryCategory').value;
                 const content = document.getElementById('memoryContent').value;
                 const imageFile = document.getElementById('memoryImage').files[0];
+                
+                console.log('Saving memory:', { date, category, content, hasImage: !!imageFile });
 
                 // プレミアムユーザーはAI感情分析Proを使用
                 let emotion;
@@ -1799,31 +1801,51 @@
                 };
 
                 if (imageFile) {
-                    // ファイルサイズを確認
-                    const fileSizeInMB = imageFile.size / (1024 * 1024);
-                    console.log(`画像サイズ: ${fileSizeInMB.toFixed(2)}MB`);
-                    
-                    // 2MB以上の場合はIndexedDBを使用
-                    if (fileSizeInMB > 2) {
-                        this.showNotification('大きな画像を処理中...', 'info');
-                        this.indexedDBStorage.saveImage(imageFile, memory.id).then(result => {
-                            if (result.success) {
-                                memory.image = result.imageUrl;
-                                memory.imageStorage = 'indexedDB';
+                    try {
+                        // ファイルサイズを確認
+                        const fileSizeInMB = imageFile.size / (1024 * 1024);
+                        console.log(`画像サイズ: ${fileSizeInMB.toFixed(2)}MB`);
+                        
+                        // 画像タイプの確認
+                        if (!imageFile.type.startsWith('image/')) {
+                            this.showNotification('画像ファイルを選択してください', 'error');
+                            return;
+                        }
+                        
+                        // 2MB以上の場合はIndexedDBを使用
+                        if (fileSizeInMB > 2) {
+                            this.showNotification('大きな画像を処理中...', 'info');
+                            this.indexedDBStorage.saveImage(imageFile, memory.id).then(result => {
+                                if (result.success) {
+                                    memory.image = result.imageUrl;
+                                    memory.imageStorage = 'indexedDB';
+                                    this.addMemory(memory);
+                                } else {
+                                    this.showNotification('画像の保存に失敗しました: ' + result.error, 'error');
+                                }
+                            }).catch(error => {
+                                console.error('IndexedDB error:', error);
+                                this.showNotification('画像の保存に失敗しました', 'error');
+                            });
+                        } else {
+                            // 2MB以下の場合は従来通りローカルストレージを使用
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                memory.image = e.target.result;
+                                memory.imageStorage = 'localStorage';
                                 this.addMemory(memory);
-                            } else {
-                                this.showNotification('画像の保存に失敗しました: ' + result.error, 'error');
-                            }
-                        });
-                    } else {
-                        // 2MB以下の場合は従来通りローカルストレージを使用
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            memory.image = e.target.result;
-                            memory.imageStorage = 'localStorage';
-                            this.addMemory(memory);
-                        };
-                        reader.readAsDataURL(imageFile);
+                            };
+                            reader.onerror = (error) => {
+                                console.error('FileReader error:', error);
+                                this.showNotification('画像の読み込みに失敗しました', 'error');
+                            };
+                            reader.readAsDataURL(imageFile);
+                        }
+                    } catch (error) {
+                        console.error('Image processing error:', error);
+                        this.showNotification('画像の処理中にエラーが発生しました', 'error');
+                        // 画像なしで保存を続行
+                        this.addMemory(memory);
                     }
                 } else {
                     this.addMemory(memory);
