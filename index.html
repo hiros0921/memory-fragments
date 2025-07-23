@@ -1850,11 +1850,28 @@
                         memory.imageStorage = 'firebase';
                         memory.imageFile = imageFile; // 一時的にFileオブジェクトを保持
                         
-                        this.addMemory(memory);
+                        // アップロード成功メッセージを表示
+                        this.showNotification('画像のアップロードが完了しました', 'success');
+                        
+                        // 少し待ってから保存処理を実行
+                        setTimeout(() => {
+                            this.addMemory(memory);
+                        }, 500);
                         
                     } catch (error) {
                         console.error('Firebase Storage upload error:', error);
-                        this.showNotification('画像のアップロードに失敗しました', 'error');
+                        
+                        // エラーメッセージを詳細に表示
+                        let errorMessage = '画像のアップロードに失敗しました';
+                        if (error.code === 'storage/unauthorized') {
+                            errorMessage = '画像のアップロード権限がありません。ログインし直してください。';
+                        } else if (error.code === 'storage/quota-exceeded') {
+                            errorMessage = 'ストレージの容量制限に達しました。';
+                        } else if (error.code === 'storage/canceled') {
+                            errorMessage = 'アップロードがキャンセルされました。';
+                        }
+                        
+                        this.showNotification(errorMessage, 'error');
                         
                         // エラーでも画像なしで保存を続行するか確認
                         if (confirm('画像のアップロードに失敗しました。画像なしで保存しますか？')) {

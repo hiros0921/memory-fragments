@@ -311,17 +311,27 @@ class AuthUI {
 
     // ユーザープロフィール表示
     createUserProfile(user) {
+        if (!user) {
+            console.error('User is null in createUserProfile');
+            return null;
+        }
+        
         const profile = document.createElement('div');
         profile.className = 'user-profile';
+        
+        // displayNameとphotoURLの安全な取得
+        const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+        const userInitial = displayName.charAt(0).toUpperCase();
+        
         profile.innerHTML = `
             <div class="user-avatar">
                 ${user.photoURL 
-                    ? `<img src="${user.photoURL}" alt="${user.displayName}">` 
-                    : user.displayName.charAt(0).toUpperCase()
+                    ? `<img src="${user.photoURL}" alt="${displayName}">` 
+                    : userInitial
                 }
             </div>
             <div class="user-info">
-                <div class="user-name">${user.displayName}</div>
+                <div class="user-name">${displayName}</div>
                 <div class="user-plan">${user.plan === 'premium' ? '👑 プレミアム' : '無料プラン'}</div>
             </div>
         `;
