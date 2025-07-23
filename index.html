@@ -1731,22 +1731,6 @@
                 document.getElementById('memoryDate').valueAsDate = new Date();
             }
             
-            // FileReaderをPromise化するヘルパーメソッド
-            readFileAsDataURL(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    
-                    reader.onload = (e) => {
-                        resolve(e.target.result);
-                    };
-                    
-                    reader.onerror = (error) => {
-                        reject(error);
-                    };
-                    
-                    reader.readAsDataURL(file);
-                });
-            }
 
             analyzeEmotion(content) {
                 const emotions = {};
@@ -1841,38 +1825,42 @@
                     const fileSizeInMB = imageFile.size / (1024 * 1024);
                     console.log(`画像サイズ: ${fileSizeInMB.toFixed(2)}MB`);
                     
-                    // 2MB以上の場合はIndexedDBを使用
-                    if (fileSizeInMB > 2) {
-                            this.showNotification('大きな画像を処理中...', 'info');
-                            this.indexedDBStorage.saveImage(imageFile, memory.id).then(result => {
-                                if (result.success) {
-                                    memory.image = result.imageUrl;
-                                    memory.imageStorage = 'indexedDB';
-                                    this.addMemory(memory);
-                                } else {
-                                    this.showNotification('画像の保存に失敗しました: ' + result.error, 'error');
-                                }
-                            }).catch(error => {
-                                console.error('IndexedDB error:', error);
-                                this.showNotification('画像の保存に失敗しました', 'error');
-                            });
-                        } else {
-                            // 2MB以下の場合は従来通りローカルストレージを使用
-                            console.log('Processing image with FileReader...');
-                            
-                            try {
-                                const imageDataUrl = await this.readFileAsDataURL(imageFile);
-                                console.log('Image successfully read, length:', imageDataUrl.length);
-                                memory.image = imageDataUrl;
-                                memory.imageStorage = 'localStorage';
-                                this.addMemory(memory);
-                            } catch (error) {
-                                console.error('FileReader error:', error);
-                                this.showNotification('画像の読み込みに失敗しました', 'error');
-                                // エラーでも画像なしで保存を続行
-                                this.addMemory(memory);
-                            }
+                    // Firebase Authenticationでユーザーを確認
+                    const user = firebase.auth().currentUser;
+                    if (!user) {
+                        this.showNotification('ログインしてください', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        this.showNotification('画像をアップロード中...', 'info');
+                        
+                        // Firebase Storageに画像をアップロード
+                        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${imageFile.name}`;
+                        const storageRef = firebase.storage().ref(`images/${user.uid}/${fileName}`);
+                        
+                        console.log('Uploading image to Firebase Storage...');
+                        const uploadTask = await storageRef.put(imageFile);
+                        const downloadURL = await uploadTask.ref.getDownloadURL();
+                        
+                        console.log('Image uploaded successfully:', downloadURL);
+                        
+                        // メモリーオブジェクトに画像URLを設定（Base64ではなくURL）
+                        memory.imageUrl = downloadURL;
+                        memory.imageStorage = 'firebase';
+                        memory.imageFile = imageFile; // 一時的にFileオブジェクトを保持
+                        
+                        this.addMemory(memory);
+                        
+                    } catch (error) {
+                        console.error('Firebase Storage upload error:', error);
+                        this.showNotification('画像のアップロードに失敗しました', 'error');
+                        
+                        // エラーでも画像なしで保存を続行するか確認
+                        if (confirm('画像のアップロードに失敗しました。画像なしで保存しますか？')) {
+                            this.addMemory(memory);
                         }
+                    }
                 } else {
                     this.addMemory(memory);
                 }
@@ -2048,7 +2036,7 @@
                         <span class="memory-category">${memory.category}</span>
                         <div class="memory-content">${this.escapeHtml(memory.content)}</div>
                         ${memory.emotion ? `<div class="memory-emotion">${memory.emotion.analysis}</div>` : ''}
-                        ${memory.image ? `<img src="${memory.image}" alt="思い出の写真" class="memory-image">` : ''}
+                        ${(memory.imageUrl || memory.image) ? `<img src="${memory.imageUrl || memory.image}" alt="思い出の写真" class="memory-image">` : ''}
                         <div class="memory-actions">
                             <button class="memory-action-btn" onclick="collaborationUI.showShareModal(${memory.id})">
                                 <span>📤</span>
@@ -2080,7 +2068,7 @@
                             <span class="memory-category">${memory.category}</span>
                             <div class="memory-content">${this.escapeHtml(memory.content)}</div>
                             ${memory.emotion ? `<div class="memory-emotion">${memory.emotion.analysis}</div>` : ''}
-                            ${memory.image ? `<img src="${memory.image}" alt="思い出の写真" class="memory-image">` : ''}
+                            ${(memory.imageUrl || memory.image) ? `<img src="${memory.imageUrl || memory.image}" alt="思い出の写真" class="memory-image">` : ''}
                             <div class="memory-actions">
                                 <button class="memory-action-btn" onclick="collaborationUI.showShareModal(${memory.id})">
                                     <span>📤</span>

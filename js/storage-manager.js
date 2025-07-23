@@ -98,38 +98,34 @@ class StorageManager {
                 
                 let memoryToSave = { ...memory };
                 
-                // 画像がある場合はFirebase Storageにアップロード
-                if (memory.image && memory.image.startsWith('data:')) {
+                // 画像がある場合の処理
+                // 注意: index.htmlで既にFirebase Storageにアップロード済みの場合はimageUrlが設定されている
+                if (memory.imageUrl && memory.imageStorage === 'firebase') {
+                    // 既にFirebase Storageにアップロード済み
+                    console.log('Image already uploaded to Firebase Storage:', memory.imageUrl);
+                    memoryToSave.imageUrl = memory.imageUrl;
+                    delete memoryToSave.image; // Base64データは保存しない
+                    delete memoryToSave.imageFile; // Fileオブジェクトも保存しない
+                } else if (memory.imageFile) {
+                    // まだアップロードされていない場合（通常はここには来ないはず）
                     try {
-                        console.log('Uploading image to Firebase Storage...');
+                        console.log('Uploading image to Firebase Storage from storage-manager...');
                         const storage = firebase.storage();
+                        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${memory.imageFile.name}`;
+                        const imageRef = storage.ref().child(`images/${user.uid}/${fileName}`);
                         
-                        // base64をBlobに変換
-                        const base64Data = memory.image.split(',')[1];
-                        const byteCharacters = atob(base64Data);
-                        const byteNumbers = new Array(byteCharacters.length);
-                        for (let i = 0; i < byteCharacters.length; i++) {
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
-                        }
-                        const byteArray = new Uint8Array(byteNumbers);
-                        const blob = new Blob([byteArray], { type: 'image/jpeg' });
-                        
-                        // Storage参照を作成
-                        const imageRef = storage.ref()
-                            .child(`images/${user.uid}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
-                        
-                        // アップロード
-                        const snapshot = await imageRef.put(blob);
+                        const snapshot = await imageRef.put(memory.imageFile);
                         const imageUrl = await snapshot.ref.getDownloadURL();
                         
-                        // メモリーオブジェクトを更新
                         memoryToSave.imageUrl = imageUrl;
-                        delete memoryToSave.image; // base64データは削除
+                        delete memoryToSave.image;
+                        delete memoryToSave.imageFile;
                         
-                        console.log('Image uploaded successfully:', imageUrl);
+                        console.log('Image uploaded successfully from storage-manager:', imageUrl);
                     } catch (imageError) {
-                        console.error('Image upload failed:', imageError);
-                        delete memoryToSave.image; // 画像アップロード失敗時は画像なしで続行
+                        console.error('Image upload failed in storage-manager:', imageError);
+                        delete memoryToSave.image;
+                        delete memoryToSave.imageFile;
                     }
                 }
                 
@@ -174,20 +170,31 @@ class StorageManager {
 
         // ローカル保存
         memory.id = Date.now().toString();
-        this.memories.unshift(memory);
+        
+        // ローカルストレージに保存する前にBase64画像データを除外
+        let memoryForLocal = { ...memory };
+        if (memoryForLocal.image && memoryForLocal.image.startsWith('data:')) {
+            delete memoryForLocal.image; // Base64データは保存しない
+        }
+        if (memoryForLocal.imageFile) {
+            delete memoryForLocal.imageFile; // Fileオブジェクトも保存しない
+        }
+        
+        this.memories.unshift(memoryForLocal);
         
         try {
             localStorage.setItem('memories', JSON.stringify(this.memories));
             return {
                 success: true,
-                memory: memory,
+                memory: memoryForLocal,
                 currentCount: this.memories.length
             };
         } catch (error) {
+            console.error('LocalStorage save error:', error);
             return {
                 success: false,
                 error: 'STORAGE_ERROR',
-                message: 'ストレージへの保存に失敗しました。'
+                message: 'ストレージへの保存に失敗しました。容量が不足している可能性があります。'
             };
         }
     }
