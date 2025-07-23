@@ -1825,59 +1825,16 @@
                     const fileSizeInMB = imageFile.size / (1024 * 1024);
                     console.log(`画像サイズ: ${fileSizeInMB.toFixed(2)}MB`);
                     
-                    // Firebase Authenticationでユーザーを確認
-                    const user = firebase.auth().currentUser;
-                    if (!user) {
-                        this.showNotification('ログインしてください', 'error');
+                    // 画像サイズ制限（5MB）
+                    if (fileSizeInMB > 5) {
+                        this.showNotification('画像サイズは5MB以下にしてください', 'error');
                         return;
                     }
                     
-                    try {
-                        this.showNotification('画像をアップロード中...', 'info');
-                        
-                        // Firebase Storageに画像をアップロード
-                        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${imageFile.name}`;
-                        const storageRef = firebase.storage().ref(`images/${user.uid}/${fileName}`);
-                        
-                        console.log('Uploading image to Firebase Storage...');
-                        const uploadTask = await storageRef.put(imageFile);
-                        const downloadURL = await uploadTask.ref.getDownloadURL();
-                        
-                        console.log('Image uploaded successfully:', downloadURL);
-                        
-                        // メモリーオブジェクトに画像URLを設定（Base64ではなくURL）
-                        memory.imageUrl = downloadURL;
-                        memory.imageStorage = 'firebase';
-                        memory.imageFile = imageFile; // 一時的にFileオブジェクトを保持
-                        
-                        // アップロード成功メッセージを表示
-                        this.showNotification('画像のアップロードが完了しました', 'success');
-                        
-                        // 少し待ってから保存処理を実行
-                        setTimeout(() => {
-                            this.addMemory(memory);
-                        }, 500);
-                        
-                    } catch (error) {
-                        console.error('Firebase Storage upload error:', error);
-                        
-                        // エラーメッセージを詳細に表示
-                        let errorMessage = '画像のアップロードに失敗しました';
-                        if (error.code === 'storage/unauthorized') {
-                            errorMessage = '画像のアップロード権限がありません。ログインし直してください。';
-                        } else if (error.code === 'storage/quota-exceeded') {
-                            errorMessage = 'ストレージの容量制限に達しました。';
-                        } else if (error.code === 'storage/canceled') {
-                            errorMessage = 'アップロードがキャンセルされました。';
-                        }
-                        
-                        this.showNotification(errorMessage, 'error');
-                        
-                        // エラーでも画像なしで保存を続行するか確認
-                        if (confirm('画像のアップロードに失敗しました。画像なしで保存しますか？')) {
-                            this.addMemory(memory);
-                        }
-                    }
+                    // 画像なしで保存（Firebase Storageは一旦使わない）
+                    this.showNotification('現在、画像保存機能は利用できません。テキストのみ保存します。', 'warning');
+                    this.addMemory(memory);
+                    
                 } else {
                     this.addMemory(memory);
                 }
