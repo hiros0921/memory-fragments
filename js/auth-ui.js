@@ -357,7 +357,9 @@ class AuthUI {
             </a>
         `;
 
-        profile.appendChild(dropdown);
+        if (profile && dropdown) {
+            profile.appendChild(dropdown);
+        }
 
         // クリックでドロップダウン表示
         profile.addEventListener('click', (e) => {
