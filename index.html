@@ -2035,7 +2035,9 @@
 
             displayGridView(container) {
                 container.className = 'memories-grid';
-                container.innerHTML = this.filteredMemories.map(memory => `
+                container.innerHTML = this.filteredMemories.map(memory => {
+                    console.log('🖼️ 表示する画像URL:', memory.imageUrl);
+                    return `
                     <div class="memory-card ${this.selectedMemories.has(memory.id) ? 'selected' : ''}" 
                          data-id="${memory.id}">
                         <div class="checkbox-wrapper">
@@ -2060,7 +2062,7 @@
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
 
             displayTimelineView(container) {
