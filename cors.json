@@ -1,8 +1,9 @@
 [
   {
-    "origin": ["https://www.memory-fragments.com", "http://localhost:3000", "http://localhost:5000"],
+    "origin": ["https://www.memory-fragments.com"],
     "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization", "x-goog-resumable", "x-goog-meta-title"]
+    "responseHeader": ["Content-Type", "Authorization"]
   }
 ]
+
