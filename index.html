@@ -1731,6 +1731,17 @@
                 document.getElementById('memoryDate').valueAsDate = new Date();
             }
             
+            // 画像をFirebase StorageにアップロードしてURLを返す関数
+            async uploadMemoryImage(file, userId) {
+                if (!file || !userId) throw new Error('fileまたはuserIdが未定義です');
+                
+                const filename = `${Date.now()}_${file.name}`;
+                const storageRef = firebase.storage().ref(`images/${userId}/${filename}`);
+                const snapshot = await storageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                return downloadURL;
+            }
+            
 
             analyzeEmotion(content) {
                 const emotions = {};
@@ -1831,10 +1842,35 @@
                         return;
                     }
                     
-                    // 画像なしで保存（Firebase Storageは一旦使わない）
-                    this.showNotification('現在、画像保存機能は利用できません。テキストのみ保存します。', 'warning');
-                    this.addMemory(memory);
+                    // Firebase Authentication確認
+                    const user = firebase.auth().currentUser;
+                    if (!user) {
+                        this.showNotification('ログインしてください', 'error');
+                        return;
+                    }
                     
+                    try {
+                        this.showNotification('画像をアップロード中...', 'info');
+                        
+                        // uploadMemoryImage関数を使用
+                        const imageUrl = await this.uploadMemoryImage(imageFile, user.uid);
+                        console.log('画像アップロード成功:', imageUrl);
+                        
+                        // メモリーにimageUrlを設定
+                        memory.imageUrl = imageUrl;
+                        
+                        this.showNotification('画像アップロード完了', 'success');
+                        this.addMemory(memory);
+                        
+                    } catch (error) {
+                        console.error('画像アップロードエラー:', error);
+                        this.showNotification('画像アップロードに失敗しました', 'error');
+                        
+                        // エラーでも画像なしで保存するか確認
+                        if (confirm('画像のアップロードに失敗しました。画像なしで保存しますか？')) {
+                            this.addMemory(memory);
+                        }
+                    }
                 } else {
                     this.addMemory(memory);
                 }

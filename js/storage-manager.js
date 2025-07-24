@@ -14,7 +14,7 @@ class StorageManager {
         if (this.authManager && this.authManager.isAuthenticated()) {
             const user = this.authManager.getCurrentUser();
             this.currentPlan = user.plan || 'free';
-            this.isCloudEnabled = true;
+            this.isCloudEnabled = åtrue;
             await this.loadMemoriesFromCloud();
         } else {
             this.memories = this.loadMemoriesFromLocal();
