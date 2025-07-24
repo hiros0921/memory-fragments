@@ -1885,6 +1885,7 @@
                 if (result.success) {
                     this.memories = this.storageManager.memories;
                     this.filterMemories();
+                    this.displayMemories(); // タイムラインを更新！
                     this.resetForm();
                     this.showNotification('記憶を保存しました');
                     this.updateUI();
