@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Fragments - 確実動作版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .auth-section {
+            background: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .upload-section {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .memory-item {
+            background: rgba(255,255,255,0.05);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .memory-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .memory-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .memory-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .memory-date {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 10px;
+        }
+        
+        .memory-category {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+        
+        .memory-content {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,0,0,0.2);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: rgba(255,0,0,0.5);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+        
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+        
+        #uploadProgress {
+            display: none;
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Memory Fragments</h1>
+        
+        <div class="auth-section" id="authSection">
+            <h2>ログイン</h2>
+            <input type="email" id="loginEmail" placeholder="メールアドレス" value="hsuwa34@gmail.com">
+            <input type="password" id="loginPassword" placeholder="パスワード">
+            <br>
+            <button onclick="login()">ログイン</button>
+            <button onclick="resetPassword()">パスワードリセット</button>
+            <div id="authStatus"></div>
+        </div>
+        
+        <div class="upload-section" id="uploadSection" style="display: none;">
+            <h2>新しい記憶を保存</h2>
+            
+            <input type="text" id="title" placeholder="タイトル（例：夏の思い出）">
+            
+            <textarea id="content" placeholder="記憶の内容を詳しく..." rows="5"></textarea>
+            
+            <select id="category">
+                <option value="">カテゴリーを選択</option>
+                <option value="日常">日常</option>
+                <option value="旅行">旅行</option>
+                <option value="仕事">仕事</option>
+                <option value="趣味">趣味</option>
+                <option value="家族">家族</option>
+                <option value="その他">その他</option>
+            </select>
+            
+            <input type="file" id="imageFile" accept="image/*">
+            
+            <div id="uploadProgress">
+                <p>アップロード中...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <button onclick="saveMemory()">💾 記憶を保存</button>
+            
+            <div id="status"></div>
+        </div>
+        
+        <div id="memoriesGrid" class="memory-grid"></div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.firebasestorage.app",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        const db = firebase.firestore();
+        
+        let currentUser = null;
+        let memories = [];
+        
+        // 認証状態の監視
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+                showStatus('authStatus', `ログイン中: ${user.email}`, false);
+                loadMemories();
+            } else {
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('uploadSection').style.display = 'none';
+            }
+        });
+        
+        // ログイン
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showStatus('authStatus', 'ログイン成功！', false);
+            } catch (error) {
+                showStatus('authStatus', `エラー: ${error.message}`, true);
+            }
+        }
+        
+        // パスワードリセット
+        async function resetPassword() {
+            const email = document.getElementById('loginEmail').value;
+            if (!email) {
+                showStatus('authStatus', 'メールアドレスを入力してください', true);
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showStatus('authStatus', 'パスワードリセットメールを送信しました', false);
+            } catch (error) {
+                showStatus('authStatus', `エラー: ${error.message}`, true);
+            }
+        }
+        
+        // 記憶を保存
+        async function saveMemory() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            
+            if (!title || !content || !category) {
+                showStatus('status', 'すべての項目を入力してください', true);
+                return;
+            }
+            
+            if (!currentUser) {
+                showStatus('status', 'ログインしてください', true);
+                return;
+            }
+            
+            document.getElementById('uploadProgress').style.display = 'block';
+            
+            const memory = {
+                title,
+                content,
+                category,
+                createdAt: new Date().toISOString(),
+                userId: currentUser.uid
+            };
+            
+            // 画像がある場合
+            if (imageFile) {
+                try {
+                    // まずFirebase Storageを試す
+                    const imageUrl = await uploadToFirebase(imageFile);
+                    if (imageUrl) {
+                        memory.imageUrl = imageUrl;
+                    } else {
+                        // 失敗したらBase64
+                        memory.imageData = await convertToBase64(imageFile);
+                    }
+                } catch (error) {
+                    console.error('画像処理エラー:', error);
+                    // エラーでもBase64で保存
+                    memory.imageData = await convertToBase64(imageFile);
+                }
+            }
+            
+            // Firestoreに保存
+            try {
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('memories').add(memory);
+                
+                showStatus('status', '✅ 保存成功！', false);
+                clearForm();
+                loadMemories();
+            } catch (error) {
+                // Firestore失敗時はローカルストレージ
+                saveToLocal(memory);
+            }
+            
+            document.getElementById('uploadProgress').style.display = 'none';
+        }
+        
+        // Firebase Storageアップロード（30秒タイムアウト付き）
+        async function uploadToFirebase(file) {
+            return new Promise((resolve) => {
+                const fileName = `memories/${currentUser.uid}/${Date.now()}_${file.name}`;
+                const storageRef = storage.ref(fileName);
+                const uploadTask = storageRef.put(file);
+                
+                const timeout = setTimeout(() => {
+                    uploadTask.cancel();
+                    resolve(null);
+                }, 30000);
+                
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        document.getElementById('progressFill').style.width = progress + '%';
+                    },
+                    (error) => {
+                        clearTimeout(timeout);
+                        console.error('Upload error:', error);
+                        resolve(null);
+                    },
+                    async () => {
+                        clearTimeout(timeout);
+                        try {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(url);
+                        } catch (error) {
+                            resolve(null);
+                        }
+                    }
+                );
+            });
+        }
+        
+        // Base64変換
+        function convertToBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // ローカルストレージに保存
+        function saveToLocal(memory) {
+            memory.id = Date.now().toString();
+            memories.unshift(memory);
+            localStorage.setItem('memories', JSON.stringify(memories));
+            showStatus('status', '✅ ローカルに保存しました', false);
+            displayMemories();
+        }
+        
+        // 記憶を読み込み
+        async function loadMemories() {
+            if (!currentUser) return;
+            
+            try {
+                const snapshot = await db.collection('users').doc(currentUser.uid)
+                    .collection('memories')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                memories = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('読み込みエラー:', error);
+                memories = JSON.parse(localStorage.getItem('memories') || '[]');
+            }
+            
+            displayMemories();
+        }
+        
+        // 記憶を表示
+        function displayMemories() {
+            const grid = document.getElementById('memoriesGrid');
+            grid.innerHTML = '<h2>保存された記憶</h2>';
+            
+            if (memories.length === 0) {
+                grid.innerHTML += '<p style="text-align: center; opacity: 0.6;">まだ記憶がありません</p>';
+                return;
+            }
+            
+            memories.forEach(memory => {
+                const item = document.createElement('div');
+                item.className = 'memory-item';
+                item.innerHTML = `
+                    <div class="delete-btn" onclick="deleteMemory('${memory.id}')">×</div>
+                    <div class="memory-title">${escapeHtml(memory.title)}</div>
+                    <div class="memory-date">${new Date(memory.createdAt).toLocaleString()}</div>
+                    <span class="memory-category">${memory.category}</span>
+                    <div class="memory-content">${escapeHtml(memory.content)}</div>
+                    ${memory.imageUrl || memory.imageData ? 
+                        `<img src="${memory.imageUrl || memory.imageData}" alt="${memory.title}">` : ''}
+                `;
+                grid.appendChild(item);
+            });
+        }
+        
+        // 記憶を削除
+        async function deleteMemory(id) {
+            if (!confirm('この記憶を削除しますか？')) return;
+            
+            if (currentUser) {
+                try {
+                    await db.collection('users').doc(currentUser.uid)
+                        .collection('memories').doc(id).delete();
+                } catch (error) {
+                    console.error('削除エラー:', error);
+                }
+            }
+            
+            memories = memories.filter(m => m.id !== id);
+            localStorage.setItem('memories', JSON.stringify(memories));
+            displayMemories();
+        }
+        
+        // フォームクリア
+        function clearForm() {
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('imageFile').value = '';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+        
+        // ステータス表示
+        function showStatus(elementId, message, isError) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isError ? 'status error' : 'status success';
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        // HTMLエスケープ
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 初期読み込み
+        window.onload = () => {
+            const localMemories = localStorage.getItem('memories');
+            if (localMemories) {
+                memories = JSON.parse(localMemories);
+                displayMemories();
+            }
+        };
+    </script>
+</body>
+</html>
