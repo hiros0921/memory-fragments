@@ -2,8 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Fragments - 確実動作版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Memory Fragments - 思い出を記録</title>
+    <link rel="manifest" href="/manifest.json">
     <style>
         * {
             margin: 0;
@@ -87,6 +90,39 @@
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
             margin-top: 30px;
+        }
+        
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .auth-section, .upload-section {
+                padding: 20px;
+            }
+            
+            input, textarea, select {
+                font-size: 16px; /* iOS zoom防止 */
+            }
+            
+            .memory-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .memory-item {
+                padding: 15px;
+            }
+            
+            button {
+                width: 100%;
+                padding: 12px 20px;
+            }
         }
         
         .memory-item {
@@ -227,7 +263,7 @@
                 <option value="その他">その他</option>
             </select>
             
-            <input type="file" id="imageFile" accept="image/*">
+            <input type="file" id="imageFile" accept="image/*" capture="environment">
             
             <div id="uploadProgress">
                 <p>アップロード中...</p>
