@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Base64画像保存（シンプル解決策）</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        img { max-width: 300px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Base64で画像を保存（最もシンプル）</h1>
+        <p>Firebase Storageを使わず、画像をBase64文字列として保存します</p>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="saveAsBase64()">Base64で保存</button>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        function saveAsBase64() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            // ファイルサイズチェック（1MB以下推奨）
+            if (file.size > 1024 * 1024) {
+                if (!confirm('ファイルサイズが大きいです。圧縮しますか？')) {
+                    return;
+                }
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64String = e.target.result;
+                
+                // ここでFirestoreまたはlocalStorageに保存
+                const memory = {
+                    id: Date.now().toString(),
+                    imageData: base64String,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // LocalStorageに保存（例）
+                const memories = JSON.parse(localStorage.getItem('memories') || '[]');
+                memories.push(memory);
+                localStorage.setItem('memories', JSON.stringify(memories));
+                
+                document.getElementById('result').innerHTML = `
+                    <div style="color: green;">
+                        <h3>✅ 保存成功！</h3>
+                        <img src="${base64String}" alt="保存された画像">
+                        <p>画像はBase64形式で保存されました</p>
+                    </div>
+                `;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

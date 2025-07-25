@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Fragments - シンプル版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .upload-section {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        button:hover {
+            background: #764ba2;
+        }
+        
+        .memory-item {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .memory-item img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Memory Fragments - シンプル版</h1>
+        
+        <div class="upload-section">
+            <h2>新しい記憶を保存</h2>
+            
+            <input type="text" id="title" placeholder="タイトル">
+            
+            <textarea id="content" placeholder="記憶の内容..." rows="4"></textarea>
+            
+            <select id="category">
+                <option value="日常">日常</option>
+                <option value="旅行">旅行</option>
+                <option value="仕事">仕事</option>
+                <option value="趣味">趣味</option>
+                <option value="その他">その他</option>
+            </select>
+            
+            <input type="file" id="imageFile" accept="image/*">
+            
+            <button onclick="saveMemory()">💾 記憶を保存</button>
+            
+            <div id="status"></div>
+        </div>
+        
+        <div id="memoriesList"></div>
+    </div>
+    
+    <script>
+        // シンプルなメモリー保存システム
+        let memories = JSON.parse(localStorage.getItem('simpleMemories') || '[]');
+        
+        function saveMemory() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            
+            if (!title || !content) {
+                showStatus('タイトルと内容を入力してください', true);
+                return;
+            }
+            
+            const memory = {
+                id: Date.now().toString(),
+                title,
+                content,
+                category,
+                createdAt: new Date().toISOString()
+            };
+            
+            // 画像がある場合はBase64で保存
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    memory.image = e.target.result;
+                    saveAndDisplay(memory);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                saveAndDisplay(memory);
+            }
+        }
+        
+        function saveAndDisplay(memory) {
+            memories.unshift(memory);
+            localStorage.setItem('simpleMemories', JSON.stringify(memories));
+            
+            // フォームをクリア
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('imageFile').value = '';
+            
+            showStatus('✅ 保存成功！', false);
+            displayMemories();
+        }
+        
+        function displayMemories() {
+            const list = document.getElementById('memoriesList');
+            list.innerHTML = '<h2>保存された記憶</h2>';
+            
+            memories.forEach(memory => {
+                const item = document.createElement('div');
+                item.className = 'memory-item';
+                item.innerHTML = `
+                    <h3>${memory.title}</h3>
+                    <p><small>${new Date(memory.createdAt).toLocaleString()}</small></p>
+                    <p>${memory.content}</p>
+                    ${memory.image ? `<img src="${memory.image}" alt="${memory.title}">` : ''}
+                    <p><span style="background: #667eea; padding: 5px 10px; border-radius: 15px; font-size: 12px;">${memory.category}</span></p>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function showStatus(message, isError) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'error' : 'success';
+            setTimeout(() => status.textContent = '', 3000);
+        }
+        
+        // 初期表示
+        displayMemories();
+    </script>
+</body>
+</html>
