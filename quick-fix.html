@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Fragments - 緊急修正版</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script>
+        // キャッシュを無効化
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        // IndexedDBをクリア
+        if (window.indexedDB) {
+            indexedDB.deleteDatabase('MemoryArchive');
+        }
+    </script>
+</head>
+<body>
+    <div style="text-align: center; padding: 50px;">
+        <h1>キャッシュをクリアしています...</h1>
+        <p>3秒後に新しいバージョンにリダイレクトします</p>
+    </div>
+    <script>
+        setTimeout(() => {
+            window.location.href = '/app';
+        }, 3000);
+    </script>
+</body>
+</html>
