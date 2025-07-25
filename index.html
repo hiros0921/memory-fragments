@@ -2521,6 +2521,7 @@ Generated: ${new Date().toLocaleDateString('ja-JP')}
 
         // 認証マネージャーとUIの初期化
         const authManager = new AuthManager();
+        window.authManager = authManager;  // グローバルに公開（StorageManagerが参照するため）
         const authUI = new AuthUI(authManager);
         
         // アプリケーション初期化

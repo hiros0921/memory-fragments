@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Service Worker 強制更新</title>
+</head>
+<body>
+    <h1>Service Worker を強制更新中...</h1>
+    <div id="status"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        async function forceUpdate() {
+            try {
+                // 1. 既存のService Workerを取得して更新
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                statusDiv.innerHTML += '<p>Service Worker 検索中...</p>';
+                
+                for (let registration of registrations) {
+                    statusDiv.innerHTML += `<p>発見: ${registration.scope}</p>`;
+                    
+                    // 強制アップデート
+                    await registration.update();
+                    statusDiv.innerHTML += '<p>更新をトリガーしました</p>';
+                    
+                    // アンレジスター
+                    await registration.unregister();
+                    statusDiv.innerHTML += '<p>Service Worker を削除しました</p>';
+                }
+                
+                // 2. キャッシュを削除
+                const cacheNames = await caches.keys();
+                statusDiv.innerHTML += '<p>キャッシュ削除中...</p>';
+                
+                for (let name of cacheNames) {
+                    await caches.delete(name);
+                    statusDiv.innerHTML += `<p>キャッシュ削除: ${name}</p>`;
+                }
+                
+                statusDiv.innerHTML += '<h2 style="color: green;">✅ 完了！3秒後にリダイレクトします...</h2>';
+                
+                // 3. メインページにリダイレクト
+                setTimeout(() => {
+                    window.location.href = '/?auth=true';
+                }, 3000);
+                
+            } catch (error) {
+                statusDiv.innerHTML += `<p style="color: red;">エラー: ${error.message}</p>`;
+            }
+        }
+        
+        // 実行
+        forceUpdate();
+    </script>
+</body>
+</html>

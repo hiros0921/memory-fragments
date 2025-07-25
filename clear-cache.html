@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>キャッシュクリアツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .success { background: #4CAF50; color: white; }
+        .warning { background: #ff9800; color: white; }
+        .danger { background: #f44336; color: white; }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Memory Fragments キャッシュクリア</h1>
+    
+    <button class="success" onclick="clearBrowserCache()">
+        1. ブラウザキャッシュをクリア
+    </button>
+    
+    <button class="warning" onclick="clearServiceWorker()">
+        2. Service Workerを削除
+    </button>
+    
+    <button class="danger" onclick="clearAllStorage()">
+        3. すべてのストレージをクリア（注意！）
+    </button>
+    
+    <div id="result"></div>
+    
+    <script>
+        function showResult(message) {
+            document.getElementById('result').innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+        }
+        
+        function clearBrowserCache() {
+            // リロード
+            showResult('ブラウザを強制リロードします...');
+            setTimeout(() => {
+                location.reload(true);
+            }, 1000);
+        }
+        
+        async function clearServiceWorker() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    showResult(`Service Worker削除: ${registration.scope}`);
+                }
+                
+                // キャッシュも削除
+                const cacheNames = await caches.keys();
+                for (let name of cacheNames) {
+                    await caches.delete(name);
+                    showResult(`キャッシュ削除: ${name}`);
+                }
+                
+                showResult('✅ Service Workerとキャッシュをすべて削除しました');
+            } catch (error) {
+                showResult(`❌ エラー: ${error.message}`);
+            }
+        }
+        
+        function clearAllStorage() {
+            if (!confirm('すべてのデータが削除されます。本当によろしいですか？')) {
+                return;
+            }
+            
+            // LocalStorage
+            localStorage.clear();
+            showResult('LocalStorage: クリア完了');
+            
+            // SessionStorage
+            sessionStorage.clear();
+            showResult('SessionStorage: クリア完了');
+            
+            // IndexedDB
+            if ('indexedDB' in window) {
+                indexedDB.databases().then(databases => {
+                    databases.forEach(db => {
+                        indexedDB.deleteDatabase(db.name);
+                        showResult(`IndexedDB削除: ${db.name}`);
+                    });
+                });
+            }
+            
+            showResult('✅ すべてのストレージをクリアしました');
+        }
+    </script>
+</body>
+</html>
