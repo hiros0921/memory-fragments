@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Modern Blog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500;700;900&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Noto Sans JP', 'Zen Kaku Gothic New', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 25%, #16213e 50%, #0f3460 75%, #0f0f23 100%);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.8),
+                         0 0 20px rgba(59, 130, 246, 0.6),
+                         0 0 30px rgba(59, 130, 246, 0.4);
+        }
+        
+        .hover-glow {
+            transition: all 0.3s ease;
+        }
+        
+        .hover-glow:hover {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.6),
+                        0 0 60px rgba(59, 130, 246, 0.4);
+            transform: translateY(-5px);
+        }
+        
+        .animated-border {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .animated-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+            background-size: 400% 400%;
+            animation: border-animation 3s ease infinite;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .animated-border:hover::before {
+            opacity: 1;
+        }
+        
+        @keyframes border-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .pulse-glow {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-gray-100">
+    <!-- ナビゲーション -->
+    <nav class="fixed top-0 w-full glass-effect z-50 py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold neon-text">HIRO BLOG</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#" class="hover:text-blue-400 transition-colors duration-300">ホーム</a>
+                <a href="#" class="hover:text-blue-400 transition-colors duration-300">記事一覧</a>
+                <a href="#" class="hover:text-blue-400 transition-colors duration-300">プロフィール</a>
+                <a href="#" class="hover:text-blue-400 transition-colors duration-300">お問い合わせ</a>
+            </div>
+            <button class="md:hidden">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ヒーローセクション -->
+    <section class="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 floating"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 floating" style="animation-delay: 2s;"></div>
+        </div>
+        
+        <div class="text-center z-10 max-w-4xl">
+            <h2 class="text-6xl md:text-8xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                限界を超えた
+            </h2>
+            <h3 class="text-4xl md:text-6xl font-bold mb-8 neon-text">
+                ブログ体験
+            </h3>
+            <p class="text-xl md:text-2xl mb-12 text-gray-300 font-light">
+                テクノロジーとクリエイティビティが交差する場所
+            </p>
+            <button class="glass-effect px-8 py-4 rounded-full text-lg font-medium hover-glow animated-border">
+                記事を探索する
+            </button>
+        </div>
+    </section>
+
+    <!-- 記事一覧 -->
+    <section class="container mx-auto px-6 py-20">
+        <h2 class="text-4xl font-bold mb-12 text-center neon-text">最新記事</h2>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- 記事カード1 -->
+            <article class="glass-effect rounded-2xl overflow-hidden hover-glow animated-border">
+                <div class="h-48 bg-gradient-to-br from-blue-600 to-purple-600"></div>
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-sm text-gray-400">
+                        <span>2024.01.20</span>
+                        <span class="mx-2">•</span>
+                        <span>5分で読める</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">次世代のWeb開発トレンド</h3>
+                    <p class="text-gray-300 mb-4">AIとWebAssemblyが変える未来のフロントエンド開発について深く掘り下げます。</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-blue-400 font-medium">続きを読む →</span>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-blue-500/20 rounded-full text-xs">Tech</span>
+                            <span class="px-3 py-1 bg-purple-500/20 rounded-full text-xs">AI</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 記事カード2 -->
+            <article class="glass-effect rounded-2xl overflow-hidden hover-glow animated-border">
+                <div class="h-48 bg-gradient-to-br from-purple-600 to-pink-600"></div>
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-sm text-gray-400">
+                        <span>2024.01.18</span>
+                        <span class="mx-2">•</span>
+                        <span>8分で読める</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">デザインシステムの構築</h3>
+                    <p class="text-gray-300 mb-4">スケーラブルで一貫性のあるデザインシステムを構築するためのベストプラクティス。</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-blue-400 font-medium">続きを読む →</span>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-pink-500/20 rounded-full text-xs">Design</span>
+                            <span class="px-3 py-1 bg-indigo-500/20 rounded-full text-xs">UI/UX</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 記事カード3 -->
+            <article class="glass-effect rounded-2xl overflow-hidden hover-glow animated-border">
+                <div class="h-48 bg-gradient-to-br from-pink-600 to-orange-600"></div>
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-sm text-gray-400">
+                        <span>2024.01.15</span>
+                        <span class="mx-2">•</span>
+                        <span>6分で読める</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">パフォーマンス最適化の極意</h3>
+                    <p class="text-gray-300 mb-4">Core Web Vitalsを改善し、ユーザー体験を劇的に向上させる実践的テクニック。</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-blue-400 font-medium">続きを読む →</span>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-orange-500/20 rounded-full text-xs">Performance</span>
+                            <span class="px-3 py-1 bg-green-500/20 rounded-full text-xs">SEO</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- プロフィールセクション -->
+    <section class="container mx-auto px-6 py-20">
+        <div class="glass-effect rounded-3xl p-8 md:p-12 max-w-4xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="w-40 h-40 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-1">
+                    <div class="w-full h-full rounded-full bg-gray-900 flex items-center justify-center">
+                        <span class="text-4xl font-bold">H</span>
+                    </div>
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h3 class="text-3xl font-bold mb-4 neon-text">HIRO SUWA</h3>
+                    <p class="text-gray-300 mb-6">
+                        フルスタックエンジニア。最新技術とクリエイティブなソリューションを追求し、
+                        より良いWeb体験を創造することに情熱を注いでいます。
+                    </p>
+                    <div class="flex justify-center md:justify-start space-x-4">
+                        <a href="#" class="glass-effect p-3 rounded-full hover-glow">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="glass-effect p-3 rounded-full hover-glow">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="glass-effect p-3 rounded-full hover-glow">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.71 6.29l-5 5a1 1 0 01-1.42 0l-2-2a1 1 0 111.42-1.42l1.29 1.3 4.29-4.3a1 1 0 011.42 1.42z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="glass-effect py-8 mt-20">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-gray-400">© 2024 HIRO BLOG. Pushing boundaries, one post at a time.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,3 +1,7 @@
+// firebase/storage モジュールの関数を明示的にインポート
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "./firebase-config"; // firebase appの構成
+
 // ストレージ管理とプラン制限
 class StorageManager {
     constructor() {
@@ -9,19 +13,17 @@ class StorageManager {
         this.initializeStorage();
     }
 
-    // ストレージの初期化
     async initializeStorage() {
         if (this.authManager && this.authManager.isAuthenticated()) {
             const user = this.authManager.getCurrentUser();
             this.currentPlan = user.plan || 'free';
-            this.isCloudEnabled = åtrue;
+            this.isCloudEnabled = true;
             await this.loadMemoriesFromCloud();
         } else {
             this.memories = this.loadMemoriesFromLocal();
         }
     }
 
-    // 現在のプランを取得
     getCurrentPlan() {
         if (this.authManager && this.authManager.isAuthenticated()) {
             const user = this.authManager.getCurrentUser();
@@ -30,20 +32,17 @@ class StorageManager {
         return 'free';
     }
 
-    // プランを設定
     setUserPlan(plan) {
         localStorage.setItem('userPlan', plan);
         this.currentPlan = plan;
         this.notifyPlanChange(plan);
     }
 
-    // ローカルストレージから読み込み
     loadMemoriesFromLocal() {
         const data = localStorage.getItem('memories');
         return data ? JSON.parse(data) : [];
     }
 
-    // クラウドから読み込み
     async loadMemoriesFromCloud() {
         if (!this.authManager || !this.authManager.isAuthenticated()) {
             return this.loadMemoriesFromLocal();
@@ -62,7 +61,6 @@ class StorageManager {
                 ...doc.data()
             }));
 
-            // ローカルにもキャッシュ
             localStorage.setItem('memories', JSON.stringify(this.memories));
             return this.memories;
         } catch (error) {
@@ -71,14 +69,12 @@ class StorageManager {
         }
     }
 
-    // メモリーを保存
     async saveMemory(memory) {
-        // 無料プランの場合、容量チェック
         if (this.currentPlan === 'free' && this.memories.length >= this.FREE_LIMIT) {
             return {
                 success: false,
                 error: 'FREE_LIMIT_EXCEEDED',
-                message: `無料プランでは${this.FREE_LIMIT}件までしか保存できません。プレミアムプランにアップグレードしてください。`,
+                message: `無料プランでは${this.FREE_LIMIT}件までしか保存できません。`,
                 currentCount: this.memories.length,
                 limit: this.FREE_LIMIT
             };
@@ -86,66 +82,84 @@ class StorageManager {
 
         memory.createdAt = new Date().toISOString();
 
-        // クラウドが有効な場合
         if (this.isCloudEnabled && this.authManager && this.authManager.isAuthenticated()) {
             try {
                 const user = this.authManager.getCurrentUser();
-                
-                // ユーザーがnullでないことを確認
-                if (!user || !user.uid) {
-                    throw new Error('User not authenticated');
-                }
-                
+                if (!user || !user.uid) throw new Error('User not authenticated');
+
                 let memoryToSave = { ...memory };
-                
-                // 画像がある場合の処理
-                // 注意: index.htmlで既にFirebase Storageにアップロード済みの場合はimageUrlが設定されている
+
                 if (memory.imageUrl && memory.imageStorage === 'firebase') {
-                    // 既にFirebase Storageにアップロード済み
-                    console.log('Image already uploaded to Firebase Storage:', memory.imageUrl);
                     memoryToSave.imageUrl = memory.imageUrl;
-                    delete memoryToSave.image; // Base64データは保存しない
-                    delete memoryToSave.imageFile; // Fileオブジェクトも保存しない
+                    delete memoryToSave.image;
+                    delete memoryToSave.imageFile;
                 } else if (memory.imageFile) {
-                    // まだアップロードされていない場合（通常はここには来ないはず）
                     try {
-                        console.log('Uploading image to Firebase Storage from storage-manager...');
-                        const storage = firebase.storage();
-                        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${memory.imageFile.name}`;
-                        const imageRef = storage.ref().child(`images/${user.uid}/${fileName}`);
+                        // Firebase認証トークンをリフレッシュ
+                        const currentUser = firebase.auth().currentUser;
+                        if (currentUser) {
+                            await currentUser.getIdToken(true);
+                        }
                         
-                        const snapshot = await imageRef.put(memory.imageFile);
-                        const imageUrl = await snapshot.ref.getDownloadURL();
+                        console.log('Starting image upload...', {
+                            fileName: memory.imageFile.name,
+                            fileSize: memory.imageFile.size,
+                            fileType: memory.imageFile.type,
+                            userId: user.uid
+                        });
                         
+                        // ファイル名を安全に生成
+                        const safeFileName = memory.imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+                        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${safeFileName}`;
+                        const imageRef = ref(storage, `images/${user.uid}/${fileName}`);
+                        // メタデータを追加
+                        const metadata = {
+                            contentType: memory.imageFile.type || 'image/jpeg',
+                            customMetadata: {
+                                uploadedBy: user.uid,
+                                uploadedAt: new Date().toISOString()
+                            }
+                        };
+                        
+                        console.log('Uploading to Firebase Storage...');
+                        const snapshot = await uploadBytes(imageRef, memory.imageFile, metadata);
+                        console.log('Upload successful, getting download URL...');
+                        const imageUrl = await getDownloadURL(imageRef);
+                        console.log('Image uploaded successfully:', imageUrl);
                         memoryToSave.imageUrl = imageUrl;
                         delete memoryToSave.image;
                         delete memoryToSave.imageFile;
-                        
-                        console.log('Image uploaded successfully from storage-manager:', imageUrl);
                     } catch (imageError) {
                         console.error('Image upload failed in storage-manager:', imageError);
+                        console.error('Error details:', {
+                            code: imageError.code,
+                            message: imageError.message,
+                            serverResponse: imageError.serverResponse
+                        });
+                        
+                        // 画像アップロードが失敗しても記憶は保存する
+                        if (memory.image) {
+                            memoryToSave.image = memory.image;
+                        }
                         delete memoryToSave.image;
                         delete memoryToSave.imageFile;
                     }
                 }
-                
-                // Firestoreに保存（画像URLのみ）
+
                 const docRef = await db.collection('users')
                     .doc(user.uid)
                     .collection('memories')
                     .add(memoryToSave);
-                
+
                 memory.id = docRef.id;
                 this.memories.unshift(memory);
-                
-                // ユーザーのメモリーカウントを更新
+
                 await db.collection('users').doc(user.uid).update({
                     memoryCount: firebase.firestore.FieldValue.increment(1)
                 });
-                
-                // ローカルにも保存（元の画像データを含む）
+
                 localStorage.setItem('memories', JSON.stringify(this.memories));
-                
+
                 return {
                     success: true,
                     memory: memory,
@@ -153,35 +167,21 @@ class StorageManager {
                 };
             } catch (error) {
                 console.error('Cloud save error:', error);
-                
-                // 権限エラーの場合
                 if (error.code === 'permission-denied') {
                     return {
                         success: false,
                         error: 'PERMISSION_DENIED',
-                        message: 'Firestoreへの保存権限がありません。管理者に連絡してください。'
+                        message: 'Firestoreへの保存権限がありません'
                     };
                 }
-                
-                // その他のエラーの場合はローカルに保存を試みる
-                console.log('Falling back to local storage...');
             }
         }
 
-        // ローカル保存
         memory.id = Date.now().toString();
-        
-        // ローカルストレージに保存する前にBase64画像データを除外
         let memoryForLocal = { ...memory };
-        if (memoryForLocal.image && memoryForLocal.image.startsWith('data:')) {
-            delete memoryForLocal.image; // Base64データは保存しない
-        }
-        if (memoryForLocal.imageFile) {
-            delete memoryForLocal.imageFile; // Fileオブジェクトも保存しない
-        }
-        
+        if (memoryForLocal.image && memoryForLocal.image.startsWith('data:')) delete memoryForLocal.image;
+        if (memoryForLocal.imageFile) delete memoryForLocal.imageFile;
         this.memories.unshift(memoryForLocal);
-        
         try {
             localStorage.setItem('memories', JSON.stringify(this.memories));
             return {
@@ -194,14 +194,12 @@ class StorageManager {
             return {
                 success: false,
                 error: 'STORAGE_ERROR',
-                message: 'ストレージへの保存に失敗しました。容量が不足している可能性があります。'
+                message: 'ストレージへの保存に失敗しました'
             };
         }
     }
 
-    // メモリーを削除
     async deleteMemory(id) {
-        // クラウドから削除
         if (this.isCloudEnabled && this.authManager && this.authManager.isAuthenticated()) {
             try {
                 const user = this.authManager.getCurrentUser();
@@ -210,8 +208,6 @@ class StorageManager {
                     .collection('memories')
                     .doc(id)
                     .delete();
-                
-                // ユーザーのメモリーカウントを更新
                 await db.collection('users').doc(user.uid).update({
                     memoryCount: firebase.firestore.FieldValue.increment(-1)
                 });
@@ -220,7 +216,6 @@ class StorageManager {
             }
         }
 
-        // ローカルから削除
         const index = this.memories.findIndex(m => m.id === id);
         if (index !== -1) {
             this.memories.splice(index, 1);
@@ -230,7 +225,6 @@ class StorageManager {
         return false;
     }
 
-    // 使用状況を取得
     getUsageStats() {
         return {
             currentCount: this.memories.length,
@@ -243,7 +237,6 @@ class StorageManager {
         };
     }
 
-    // クラウドプランへの移行時のデータ移行
     async migrateToCloud() {
         if (!this.authManager || !this.authManager.isAuthenticated()) {
             return { success: false, error: 'ログインが必要です' };
@@ -251,14 +244,13 @@ class StorageManager {
 
         const user = this.authManager.getCurrentUser();
         const localMemories = this.loadMemoriesFromLocal();
-        
+
         if (localMemories.length === 0) {
             return { success: true, message: '移行するデータがありません' };
         }
 
         try {
             const batch = db.batch();
-            
             localMemories.forEach(memory => {
                 const docRef = db.collection('users')
                     .doc(user.uid)
@@ -269,24 +261,22 @@ class StorageManager {
 
             await batch.commit();
             await this.loadMemoriesFromCloud();
-            
-            return { 
-                success: true, 
-                message: `${localMemories.length}件のメモリーをクラウドに移行しました` 
+
+            return {
+                success: true,
+                message: `${localMemories.length}件のメモリーをクラウドに移行しました`
             };
         } catch (error) {
             return { success: false, error: '移行に失敗しました' };
         }
     }
 
-    // プラン変更通知
     notifyPlanChange(plan) {
-        window.dispatchEvent(new CustomEvent('planChanged', { 
+        window.dispatchEvent(new CustomEvent('planChanged', {
             detail: { plan, usage: this.getUsageStats() }
         }));
     }
 
-    // ストレージ容量警告
     checkStorageWarning() {
         if (this.currentPlan === 'free') {
             const remaining = this.FREE_LIMIT - this.memories.length;
@@ -299,7 +289,7 @@ class StorageManager {
             } else if (remaining === 0) {
                 return {
                     show: true,
-                    message: '無料プランの上限に達しました。プレミアムプランへのアップグレードをご検討ください。',
+                    message: '無料プランの上限に達しました',
                     type: 'error'
                 };
             }
@@ -308,5 +298,4 @@ class StorageManager {
     }
 }
 
-// エクスポート
 window.StorageManager = StorageManager;

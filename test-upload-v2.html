@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Storage テスト v2 - XMLHttpRequest版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Storage テスト v2</h1>
+    
+    <div>
+        <h3>1. 現在のユーザー</h3>
+        <div id="currentUser">未ログイン</div>
+        <div style="margin-top: 10px;">
+            <button onclick="showLogin()">ログイン</button>
+            <button onclick="logout()">ログアウト</button>
+        </div>
+    </div>
+    
+    <div>
+        <h3>2. 別の方法でアップロードテスト</h3>
+        <button onclick="testDirectUpload()">直接アップロード（XMLHttpRequest）</button>
+        <button onclick="testBase64Upload()">Base64エンコードしてアップロード</button>
+        <button onclick="testSmallFile()">超小さいファイルでテスト</button>
+    </div>
+    
+    <!-- ログインフォーム -->
+    <div id="loginForm" style="display: none; margin-top: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h3>ログイン</h3>
+        <div style="margin-bottom: 10px;">
+            <input type="email" id="email" placeholder="メールアドレス" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <input type="password" id="password" placeholder="パスワード" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+        </div>
+        <button onclick="login()">ログイン</button>
+        <button onclick="register()">新規登録</button>
+        <button onclick="hideLogin()">キャンセル</button>
+        <div style="margin-top: 10px;">
+            <small>既存アカウント: hsuwa34@gmail.com</small>
+        </div>
+    </div>
+    
+    <div>
+        <h3>3. ログ</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.appspot.com",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
+        // 認証状態の監視
+        auth.onAuthStateChanged(user => {
+            const userDiv = document.getElementById('currentUser');
+            if (user) {
+                userDiv.textContent = `${user.email} (UID: ${user.uid})`;
+                userDiv.style.color = 'green';
+                log(`ログイン中: ${user.email}`, 'success');
+            } else {
+                userDiv.textContent = '未ログイン';
+                userDiv.style.color = 'red';
+                log('未ログイン', 'error');
+            }
+        });
+
+        // 1. XMLHttpRequestを使った直接アップロード
+        async function testDirectUpload() {
+            const user = auth.currentUser;
+            if (!user) {
+                log('ログインしてください', 'error');
+                return;
+            }
+
+            try {
+                log('XMLHttpRequestでアップロード開始...');
+                
+                // 小さなテキストファイルを作成
+                const content = 'Hello Firebase Storage!';
+                const blob = new Blob([content], { type: 'text/plain' });
+                
+                // アップロードトークンを取得
+                const token = await user.getIdToken();
+                
+                // Storage URLを構築
+                const fileName = `test_${Date.now()}.txt`;
+                const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/images%2F${user.uid}%2F${fileName}`;
+                
+                // XMLHttpRequestでアップロード
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', uploadUrl, true);
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                xhr.setRequestHeader('Content-Type', 'text/plain');
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        log('アップロード成功！', 'success');
+                        const response = JSON.parse(xhr.responseText);
+                        log(`Download URL: ${response.downloadTokens}`, 'success');
+                    } else {
+                        log(`アップロードエラー: ${xhr.status} ${xhr.statusText}`, 'error');
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    log('ネットワークエラー', 'error');
+                };
+                
+                xhr.send(blob);
+                
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 2. Base64エンコードしてアップロード
+        async function testBase64Upload() {
+            const user = auth.currentUser;
+            if (!user) {
+                log('ログインしてください', 'error');
+                return;
+            }
+
+            try {
+                log('Base64画像を生成中...');
+                
+                // 小さなCanvas画像を作成
+                const canvas = document.createElement('canvas');
+                canvas.width = 10;
+                canvas.height = 10;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 10, 10);
+                
+                // Base64に変換
+                const base64 = canvas.toDataURL('image/png');
+                const base64Data = base64.split(',')[1];
+                
+                // Base64をBlobに変換
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/png' });
+                
+                log(`Blobサイズ: ${blob.size}バイト`);
+                
+                // Firebase Storageにアップロード
+                const fileName = `base64_test_${Date.now()}.png`;
+                const storageRef = storage.ref();
+                const imageRef = storageRef.child(`images/${user.uid}/${fileName}`);
+                
+                log('アップロード中...');
+                const snapshot = await imageRef.put(blob);
+                log('アップロード完了！', 'success');
+                
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                log(`Download URL: ${downloadURL}`, 'success');
+                
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+            }
+        }
+
+        // 3. 超小さいファイルでテスト
+        async function testSmallFile() {
+            const user = auth.currentUser;
+            if (!user) {
+                log('ログインしてください', 'error');
+                return;
+            }
+
+            try {
+                log('1バイトのファイルでテスト...');
+                
+                // 1バイトのファイル
+                const blob = new Blob(['x'], { type: 'text/plain' });
+                
+                const fileName = `tiny_${Date.now()}.txt`;
+                const storageRef = storage.ref();
+                const fileRef = storageRef.child(`images/${user.uid}/${fileName}`);
+                
+                // メタデータなしでアップロード
+                const snapshot = await fileRef.put(blob);
+                log('アップロード成功！', 'success');
+                
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                log(`URL: ${downloadURL}`, 'success');
+                
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+                
+                // より詳細なエラー情報
+                if (error.code) log(`エラーコード: ${error.code}`, 'error');
+                if (error.serverResponse) {
+                    log(`サーバーレスポンス: ${error.serverResponse}`, 'error');
+                }
+            }
+        }
+
+        // ログイン関数
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                log('メールアドレスとパスワードを入力してください', 'error');
+                return;
+            }
+            
+            try {
+                log(`${email} でログイン中...`);
+                const result = await auth.signInWithEmailAndPassword(email, password);
+                log(`ログイン成功: ${result.user.email}`, 'success');
+                hideLogin();
+            } catch (error) {
+                log(`ログインエラー: ${error.message}`, 'error');
+                if (error.code === 'auth/user-not-found') {
+                    log('ユーザーが見つかりません。新規登録してください。', 'info');
+                } else if (error.code === 'auth/wrong-password') {
+                    log('パスワードが間違っています。', 'error');
+                }
+            }
+        }
+        
+        // 新規登録関数
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                log('メールアドレスとパスワードを入力してください', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                log('パスワードは6文字以上にしてください', 'error');
+                return;
+            }
+            
+            try {
+                log(`${email} で新規登録中...`);
+                const result = await auth.createUserWithEmailAndPassword(email, password);
+                log(`新規登録成功: ${result.user.email}`, 'success');
+                hideLogin();
+            } catch (error) {
+                log(`新規登録エラー: ${error.message}`, 'error');
+                if (error.code === 'auth/email-already-in-use') {
+                    log('このメールアドレスは既に使用されています。ログインしてください。', 'info');
+                }
+            }
+        }
+        
+        // ログアウト関数
+        async function logout() {
+            try {
+                await auth.signOut();
+                log('ログアウトしました', 'success');
+            } catch (error) {
+                log(`ログアウトエラー: ${error.message}`, 'error');
+            }
+        }
+        
+        // ログインフォーム表示/非表示
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('email').focus();
+        }
+        
+        function hideLogin() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // 自動ログイン（前回のユーザーで）
+        window.onload = () => {
+            log('Firebase初期化完了');
+            
+            // Enterキーでログイン
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        };
+    </script>
+</body>
+</html>

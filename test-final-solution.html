@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Storage 最終解決策</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        #result { margin-top: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Storage 最終解決策</h1>
+    
+    <h2>方法1: Firebase SDK v8（古いバージョン）を使う</h2>
+    <p>現在のSDKがv9で、CORSの問題がある可能性があります。</p>
+    
+    <h2>方法2: 本番環境でテスト</h2>
+    <p>ローカル環境（file://）ではCORSエラーが発生しやすいです。</p>
+    
+    <div id="result"></div>
+
+    <!-- Firebase v8 SDK（古いが安定版） -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <script>
+        // 結果表示
+        function showResult(message, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = isError ? 'error' : 'success';
+            resultDiv.innerHTML = message;
+        }
+
+        // Firebase設定（v8形式）
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.appspot.com",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+
+        // 初期化
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
+        showResult(`
+            <h3>📌 解決策</h3>
+            
+            <h4>1. Google Cloud Console でCORSを設定（最重要）</h4>
+            <ol>
+                <li><a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>を開く</li>
+                <li>プロジェクト「memory-fragments」を選択</li>
+                <li>右上の「Cloud Shell」（ターミナルアイコン）をクリック</li>
+                <li>以下のコマンドを実行：
+                    <pre style="background: #333; color: white; padding: 10px; border-radius: 5px;">
+echo '[{"origin": ["*"],"method": ["GET", "PUT", "POST", "DELETE"],"maxAgeSeconds": 3600}]' > cors.json
+gsutil cors set cors.json gs://memory-fragments.appspot.com
+gsutil cors get gs://memory-fragments.appspot.com</pre>
+                </li>
+            </ol>
+            
+            <h4>2. 本番環境でテスト</h4>
+            <p>ローカル（file://）ではなく、実際のWebサーバーでテストする必要があります：</p>
+            <ul>
+                <li>Vercelでホスティング</li>
+                <li>またはPythonで簡易サーバー: <code>python -m http.server 8000</code></li>
+            </ul>
+            
+            <h4>3. 最後の手段：Firebase Functions</h4>
+            <p>クライアントサイドでどうしても動かない場合は、Firebase Functionsを使ってサーバーサイドでアップロードする方法もあります。</p>
+            
+            <h4>4. 代替案：Cloudinary</h4>
+            <p>画像管理に特化したサービスで、CORSの問題がありません：</p>
+            <ul>
+                <li><a href="https://cloudinary.com/" target="_blank">Cloudinary</a>（無料プランあり）</li>
+                <li>シンプルなAPI</li>
+                <li>自動画像最適化</li>
+            </ul>
+            
+            <hr>
+            
+            <h4>🔍 問題の原因</h4>
+            <p>Firebase StorageのCORS設定は、Google Cloud Storage側で行う必要があります。
+            Firebase ConsoleだけではCORS設定ができないため、Google Cloud Consoleでの設定が必須です。</p>
+            
+            <p><strong>11日間戦われたとのことですが、この問題は多くの開発者が直面する既知の問題です。
+            Google Cloud ConsoleでのCORS設定が解決の鍵です。</strong></p>
+        `);
+    </script>
+</body>
+</html>

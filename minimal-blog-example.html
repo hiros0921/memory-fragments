@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIRO BLOG - シンプル版</title>
+    
+    <!-- SEO最適化 -->
+    <meta name="description" content="テクノロジーとクリエイティビティが交差する場所">
+    <meta property="og:title" content="HIRO BLOG">
+    <meta property="og:description" content="テクノロジーとクリエイティビティが交差する場所">
+    <meta property="og:type" content="website">
+    
+    <!-- LLMO対応の構造化データ -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "HIRO BLOG",
+        "description": "テクノロジーとクリエイティビティが交差する場所",
+        "author": {
+            "@type": "Person",
+            "name": "Hiro Suwa"
+        }
+    }
+    </script>
+    
+    <style>
+        /* 最小限のCSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            line-height: 1.7;
+            color: #333;
+            background: #f9fafb;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #1a202c;
+        }
+        
+        article {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        article h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+        }
+        
+        article .meta {
+            color: #718096;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        article p {
+            color: #4a5568;
+            margin-bottom: 1rem;
+        }
+        
+        article a {
+            color: #3182ce;
+            text-decoration: none;
+        }
+        
+        article a:hover {
+            text-decoration: underline;
+        }
+        
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1a202c;
+                color: #e2e8f0;
+            }
+            
+            article {
+                background: #2d3748;
+            }
+            
+            h1, article h2 {
+                color: #f7fafc;
+            }
+            
+            article p {
+                color: #cbd5e0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HIRO BLOG</h1>
+        
+        <!-- 記事リスト（JSONから動的に生成） -->
+        <div id="blog-posts"></div>
+    </div>
+    
+    <script>
+        // シンプルなブログデータ（通常は別ファイルかCMSから取得）
+        const posts = [
+            {
+                title: "AIとWebAssemblyの未来",
+                date: "2024-01-20",
+                excerpt: "最新の機械学習モデルをWebブラウザ上で動作させる手法について解説します。",
+                slug: "ai-webassembly-future"
+            },
+            {
+                title: "パフォーマンス最適化の基本",
+                date: "2024-01-15", 
+                excerpt: "Core Web Vitalsを改善するための実践的なテクニックを紹介します。",
+                slug: "performance-optimization"
+            }
+        ];
+        
+        // 記事を表示
+        const container = document.getElementById('blog-posts');
+        posts.forEach(post => {
+            const article = document.createElement('article');
+            article.innerHTML = `
+                <h2>${post.title}</h2>
+                <div class="meta">${post.date}</div>
+                <p>${post.excerpt}</p>
+                <a href="/blog/${post.slug}">続きを読む →</a>
+            `;
+            container.appendChild(article);
+        });
+    </script>
+</body>
+</html>

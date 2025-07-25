@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Storage テスト - 最終版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Storage 最終テスト</h1>
+    
+    <div class="warning">
+        <h3>⚠️ 重要: キャッシュクリアの手順</h3>
+        <ol>
+            <li>Command + Shift + R (Mac) または Ctrl + Shift + R (Windows) で完全リロード</li>
+            <li>それでもダメな場合：
+                <ul>
+                    <li>Chrome: 設定 → プライバシーとセキュリティ → 閲覧履歴データの削除</li>
+                    <li>Safari: 開発 → キャッシュを空にする</li>
+                </ul>
+            </li>
+            <li>シークレット/プライベートウィンドウで開く</li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2>1. 認証状態</h2>
+        <div id="authStatus">確認中...</div>
+        <input type="email" id="email" placeholder="メールアドレス" value="hsuwa34@gmail.com" style="width: 250px; padding: 5px;">
+        <input type="password" id="password" placeholder="パスワード" style="width: 200px; padding: 5px;">
+        <button id="loginBtn">ログイン</button>
+        <button id="resetBtn" style="background: #ea4335;">パスワードリセット</button>
+    </div>
+
+    <div class="section">
+        <h2>2. Storage設定確認</h2>
+        <pre id="configInfo"></pre>
+    </div>
+
+    <div class="section">
+        <h2>3. アップロードテスト</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="uploadBtn" disabled>アップロード</button>
+        <div id="uploadResult"></div>
+    </div>
+
+    <!-- Firebase SDK v9 compat mode -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    
+    <script>
+        // タイムスタンプ付きでキャッシュ回避
+        const timestamp = new Date().getTime();
+        
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.firebasestorage.app",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        
+        // 設定情報表示
+        document.getElementById('configInfo').textContent = JSON.stringify({
+            storageBucket: firebaseConfig.storageBucket,
+            timestamp: timestamp,
+            corsApplied: "gsutil cors set実行済み"
+        }, null, 2);
+        
+        // 認証状態確認
+        auth.onAuthStateChanged((user) => {
+            const statusDiv = document.getElementById('authStatus');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (user) {
+                statusDiv.innerHTML = `<span class="success">✓ ログイン中: ${user.email}</span>`;
+                uploadBtn.disabled = false;
+            } else {
+                statusDiv.innerHTML = '<span class="error">✗ 未ログイン</span>';
+                uploadBtn.disabled = true;
+            }
+        });
+        
+        // ログイン
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('メールアドレスとパスワードを入力してください');
+                return;
+            }
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                console.log('ログイン成功');
+            } catch (error) {
+                alert('ログインエラー: ' + error.message);
+            }
+        });
+        
+        // パスワードリセット
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            
+            if (!email) {
+                alert('メールアドレスを入力してください');
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert('パスワードリセットメールを送信しました。メールをご確認ください。');
+            } catch (error) {
+                alert('リセットエラー: ' + error.message);
+            }
+        });
+        
+        // アップロード
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const resultDiv = document.getElementById('uploadResult');
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div>アップロード中...</div>';
+            
+            try {
+                // ユニークなファイル名生成
+                const fileName = `test-${timestamp}-${file.name}`;
+                const storageRef = storage.ref(`uploads/${fileName}`);
+                
+                console.log('アップロード開始:', fileName);
+                
+                // メタデータ設定
+                const metadata = {
+                    contentType: file.type,
+                    customMetadata: {
+                        uploadedAt: new Date().toISOString(),
+                        uploadedBy: auth.currentUser.uid
+                    }
+                };
+                
+                // アップロード実行
+                const uploadTask = storageRef.put(file, metadata);
+                
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        resultDiv.innerHTML = `<div>進行状況: ${progress.toFixed(2)}%</div>`;
+                    },
+                    (error) => {
+                        console.error('アップロードエラー:', error);
+                        resultDiv.innerHTML = `
+                            <div class="error">
+                                エラー: ${error.code}<br>
+                                ${error.message}<br>
+                                <small>${JSON.stringify(error, null, 2)}</small>
+                            </div>
+                        `;
+                    },
+                    async () => {
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                ✓ アップロード成功！<br>
+                                <a href="${downloadURL}" target="_blank">画像を表示</a><br>
+                                <img src="${downloadURL}" style="max-width: 300px; margin-top: 10px;">
+                            </div>
+                        `;
+                    }
+                );
+            } catch (error) {
+                console.error('エラー:', error);
+                resultDiv.innerHTML = `<div class="error">エラー: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,9 +1,1 @@
-[
-  {
-    "origin": ["https://www.memory-fragments.com"],
-    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization"]
-  }
-]
-
+[{"origin": ["*"],"method": ["GET", "PUT", "POST", "DELETE"],"maxAgeSeconds": 3600}]

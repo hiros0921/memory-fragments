@@ -1,20 +1,17 @@
 // Service Worker for offline support
 const CACHE_NAME = 'memory-fragments-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/css/auth-styles.css',
-    '/js/firebase-config.js',
-    '/js/auth-manager.js',
-    '/js/auth-ui.js',
-    '/js/storage-manager.js',
-    '/js/premium-features.js',
-    '/js/upgrade-hooks.js',
-    '/js/cloud-sync-manager.js',
-    'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
-    'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-    'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
-    'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js'
+    './',
+    './index.html',
+    './css/auth-styles.css',
+    './js/firebase-config.js',
+    './js/auth-manager.js',
+    './js/auth-ui.js',
+    './js/storage-manager.js',
+    './js/premium-features.js',
+    './js/upgrade-hooks.js',
+    './js/cloud-sync-manager.js'
+    // 外部URLはキャッシュから除外（CORSエラー回避）
 ];
 
 // インストール時にキャッシュ

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Storage アップロードテスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #357ae8;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .info {
+            color: blue;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        img {
+            max-width: 300px;
+            margin: 10px 0;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Firebase Storage アップロードテスト</h1>
+        
+        <div>
+            <h3>1. 認証状態を確認</h3>
+            <button onclick="checkAuth()">認証状態確認</button>
+            <button onclick="loginTest()">ログイン</button>
+            <button onclick="registerTest()">新規登録</button>
+            <button onclick="resetPassword()">パスワードリセット</button>
+            <button onclick="logoutTest()">ログアウト</button>
+        </div>
+        
+        <div>
+            <h3>2. 画像をアップロード</h3>
+            <input type="file" id="fileInput" accept="image/*">
+            <button onclick="testUpload()">アップロードテスト</button>
+            <button onclick="createTestImage()">テスト画像生成＆アップロード</button>
+        </div>
+        
+        <div>
+            <h3>3. ログ</h3>
+            <div id="log" class="log"></div>
+        </div>
+        
+        <div>
+            <h3>4. アップロードした画像</h3>
+            <img id="uploadedImage" style="display:none;">
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <script>
+        // ログ関数
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.appspot.com", // 修正済み
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+
+        // Firebaseの初期化
+        log('Firebaseを初期化中...');
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        log('Firebase初期化完了', 'success');
+
+        // 認証状態の確認
+        function checkAuth() {
+            const user = auth.currentUser;
+            if (user) {
+                log(`ログイン済み: ${user.email} (UID: ${user.uid})`, 'success');
+                // トークンの確認
+                user.getIdToken().then(token => {
+                    log('認証トークン取得成功', 'success');
+                }).catch(error => {
+                    log(`トークン取得エラー: ${error.message}`, 'error');
+                });
+            } else {
+                log('未ログイン状態', 'error');
+            }
+        }
+
+        // テストログイン
+        async function loginTest() {
+            try {
+                // メールアドレスとパスワードでログイン
+                const email = prompt('メールアドレスを入力してください:');
+                const password = prompt('パスワードを入力してください:');
+                
+                if (!email || !password) {
+                    log('メールアドレスとパスワードが必要です', 'error');
+                    return;
+                }
+                
+                log(`${email} でログイン中...`);
+                const result = await auth.signInWithEmailAndPassword(email, password);
+                log(`ログイン成功: ${result.user.email} (UID: ${result.user.uid})`, 'success');
+                
+                // トークンを取得して確認
+                const token = await result.user.getIdToken(true);
+                log('認証トークン取得成功', 'success');
+                
+            } catch (error) {
+                log(`ログインエラー: ${error.message}`, 'error');
+                log(`エラーコード: ${error.code}`, 'error');
+                
+                if (error.code === 'auth/user-not-found') {
+                    log('ユーザーが見つかりません。新規登録が必要かもしれません。', 'info');
+                } else if (error.code === 'auth/wrong-password') {
+                    log('パスワードが間違っています。', 'error');
+                }
+            }
+        }
+
+        // ファイルアップロードテスト
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                log('ファイルを選択してください', 'error');
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (!user) {
+                log('先にログインしてください', 'error');
+                return;
+            }
+
+            try {
+                log(`ファイル情報: ${file.name} (${file.size}バイト, ${file.type})`);
+                
+                // ファイル名を生成
+                const timestamp = Date.now();
+                const randomId = Math.random().toString(36).substring(2, 9);
+                const fileName = `${timestamp}_${randomId}_${file.name}`;
+                const storagePath = `images/${user.uid}/${fileName}`;
+                
+                log(`アップロードパス: ${storagePath}`);
+                
+                // Storage参照を作成
+                const storageRef = storage.ref();
+                const imageRef = storageRef.child(storagePath);
+                
+                // メタデータ
+                const metadata = {
+                    contentType: file.type,
+                    customMetadata: {
+                        uploadedAt: new Date().toISOString(),
+                        uploadedBy: user.uid
+                    }
+                };
+                
+                log('アップロード開始...');
+                const snapshot = await imageRef.put(file, metadata);
+                log('アップロード完了', 'success');
+                
+                // ダウンロードURLを取得
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                log(`ダウンロードURL: ${downloadURL}`, 'success');
+                
+                // 画像を表示
+                const img = document.getElementById('uploadedImage');
+                img.src = downloadURL;
+                img.style.display = 'block';
+                
+            } catch (error) {
+                log(`アップロードエラー: ${error.message}`, 'error');
+                log(`エラーコード: ${error.code}`, 'error');
+                if (error.serverResponse) {
+                    log(`サーバーレスポンス: ${error.serverResponse}`, 'error');
+                }
+            }
+        }
+
+        // テスト画像を生成してアップロード
+        async function createTestImage() {
+            const user = auth.currentUser;
+            if (!user) {
+                log('先にログインしてください', 'error');
+                return;
+            }
+
+            try {
+                log('テスト画像を生成中...');
+                
+                // Canvasでテスト画像を作成
+                const canvas = document.createElement('canvas');
+                canvas.width = 200;
+                canvas.height = 200;
+                const ctx = canvas.getContext('2d');
+                
+                // グラデーション背景
+                const gradient = ctx.createLinearGradient(0, 0, 200, 200);
+                gradient.addColorStop(0, '#ff6b6b');
+                gradient.addColorStop(1, '#4ecdc4');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 200, 200);
+                
+                // テキスト
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Test Image', 100, 100);
+                ctx.font = '14px Arial';
+                ctx.fillText(new Date().toLocaleTimeString(), 100, 130);
+                
+                // Blobに変換
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], 'test-image.png', { type: 'image/png' });
+                    log(`テスト画像生成完了: ${file.size}バイト`);
+                    
+                    // アップロード
+                    const timestamp = Date.now();
+                    const fileName = `test_${timestamp}.png`;
+                    const storagePath = `images/${user.uid}/${fileName}`;
+                    
+                    const storageRef = storage.ref();
+                    const imageRef = storageRef.child(storagePath);
+                    
+                    log('テスト画像をアップロード中...');
+                    const snapshot = await imageRef.put(file);
+                    const downloadURL = await snapshot.ref.getDownloadURL();
+                    
+                    log('テスト画像アップロード成功！', 'success');
+                    log(`URL: ${downloadURL}`, 'success');
+                    
+                    // 画像を表示
+                    const img = document.getElementById('uploadedImage');
+                    img.src = downloadURL;
+                    img.style.display = 'block';
+                    
+                }, 'image/png');
+                
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 新規登録
+        async function registerTest() {
+            try {
+                const email = prompt('新規登録用のメールアドレスを入力してください:');
+                const password = prompt('パスワードを入力してください（6文字以上）:');
+                
+                if (!email || !password) {
+                    log('メールアドレスとパスワードが必要です', 'error');
+                    return;
+                }
+                
+                log(`${email} で新規登録中...`);
+                const result = await auth.createUserWithEmailAndPassword(email, password);
+                log(`新規登録成功: ${result.user.email} (UID: ${result.user.uid})`, 'success');
+                
+            } catch (error) {
+                log(`新規登録エラー: ${error.message}`, 'error');
+                log(`エラーコード: ${error.code}`, 'error');
+            }
+        }
+        
+        // パスワードリセット
+        async function resetPassword() {
+            try {
+                const email = prompt('パスワードリセット用のメールアドレスを入力してください:');
+                
+                if (!email) {
+                    log('メールアドレスが必要です', 'error');
+                    return;
+                }
+                
+                log(`${email} にパスワードリセットメールを送信中...`);
+                await auth.sendPasswordResetEmail(email);
+                log('パスワードリセットメールを送信しました。メールを確認してください。', 'success');
+                
+            } catch (error) {
+                log(`パスワードリセットエラー: ${error.message}`, 'error');
+                log(`エラーコード: ${error.code}`, 'error');
+            }
+        }
+        
+        // ログアウト
+        async function logoutTest() {
+            try {
+                await auth.signOut();
+                log('ログアウトしました', 'success');
+            } catch (error) {
+                log(`ログアウトエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 初期化時に認証状態を監視
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                log(`認証状態変更: ログイン済み (${user.email} - UID: ${user.uid})`, 'info');
+            } else {
+                log('認証状態変更: 未ログイン', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

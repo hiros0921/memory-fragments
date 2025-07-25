@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Fragments - ログインテスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #357ae8;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            margin: 10px 0;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Memory Fragments</h1>
+        <h2>ログイン</h2>
+        
+        <div class="info">
+            <strong>テストアカウント:</strong><br>
+            メール: hsuwa34@gmail.com<br>
+            パスワード: 設定したパスワード
+        </div>
+        
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="メールアドレス" required>
+            <input type="password" id="password" placeholder="パスワード" required>
+            <button type="submit">ログイン</button>
+        </form>
+        
+        <button id="createAccount" style="background: #34a853;">新規アカウント作成</button>
+        <button id="resetPassword" style="background: #ea4335;">パスワードリセット</button>
+        
+        <div id="message"></div>
+        
+        <div id="loginStatus" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    
+    <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.firebasestorage.app",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+        
+        // Firebase初期化
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        
+        // メッセージ表示
+        function showMessage(text, isError = false) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = isError ? 'error' : 'success';
+        }
+        
+        // ログイン状態を表示
+        function updateLoginStatus() {
+            const user = auth.currentUser;
+            const statusDiv = document.getElementById('loginStatus');
+            if (user) {
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        ログイン中: ${user.email}<br>
+                        UID: ${user.uid}<br>
+                        <button onclick="testUpload()" style="background: #ff6900; margin-top: 10px;">
+                            画像アップロードをテスト
+                        </button>
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = '<div class="error">ログインしていません</div>';
+            }
+        }
+        
+        // ログイン処理
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                showMessage('ログイン成功！');
+                updateLoginStatus();
+            } catch (error) {
+                showMessage(`ログインエラー: ${error.message}`, true);
+            }
+        });
+        
+        // アカウント作成
+        document.getElementById('createAccount').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showMessage('メールアドレスとパスワードを入力してください', true);
+                return;
+            }
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                showMessage('アカウント作成成功！');
+                updateLoginStatus();
+            } catch (error) {
+                showMessage(`作成エラー: ${error.message}`, true);
+            }
+        });
+        
+        // パスワードリセット
+        document.getElementById('resetPassword').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            
+            if (!email) {
+                showMessage('メールアドレスを入力してください', true);
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showMessage('パスワードリセットメールを送信しました');
+            } catch (error) {
+                showMessage(`リセットエラー: ${error.message}`, true);
+            }
+        });
+        
+        // 認証状態の監視
+        auth.onAuthStateChanged((user) => {
+            updateLoginStatus();
+        });
+        
+        // 画像アップロードテスト
+        window.testUpload = function() {
+            window.location.href = 'test-upload.html';
+        }
+    </script>
+</body>
+</html>

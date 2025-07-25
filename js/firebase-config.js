@@ -3,7 +3,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
     authDomain: "memory-fragments.firebaseapp.com",
     projectId: "memory-fragments",
-    storageBucket: "memory-fragments.appspot.com",
+    storageBucket: "memory-fragments.firebasestorage.app",
     messagingSenderId: "798156189875",
     appId: "1:798156189875:web:404069566f9fa68a8580c6",
     measurementId: "G-8T2KT0Z9ZE"

@@ -1360,6 +1360,24 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     
+    <!-- Modular SDK for Storage -->
+    <script type="module">
+        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        
+        // uploadMemoryImage関数をグローバルに公開
+        window.uploadMemoryImageModular = async function(file, userId) {
+            if (!file || !userId) throw new Error('fileまたはuserIdが未定義です');
+            
+            const storage = getStorage();
+            const filename = `${Date.now()}_${file.name}`;
+            const fileRef = ref(storage, `images/${userId}/${filename}`);
+            const snapshot = await uploadBytes(fileRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL;
+        };
+    </script>
+    
     <!-- 外部CSSファイル -->
     <link rel="stylesheet" href="css/auth-styles.css">
     <link rel="stylesheet" href="css/premium-features.css">
@@ -1733,11 +1751,18 @@
             
             // 画像をFirebase StorageにアップロードしてURLを返す関数
             async uploadMemoryImage(file, userId) {
+                // Modular SDKのuploadMemoryImageModularを使用
+                if (window.uploadMemoryImageModular) {
+                    return await window.uploadMemoryImageModular(file, userId);
+                }
+                
+                // フォールバック（念のため）
                 if (!file || !userId) throw new Error('fileまたはuserIdが未定義です');
                 
+                const storage = firebase.storage();
                 const filename = `${Date.now()}_${file.name}`;
-                const storageRef = firebase.storage().ref(`images/${userId}/${filename}`);
-                const snapshot = await storageRef.put(file);
+                const fileRef = storage.ref(`images/${userId}/${filename}`);
+                const snapshot = await fileRef.put(file);
                 const downloadURL = await snapshot.ref.getDownloadURL();
                 return downloadURL;
             }
@@ -2624,6 +2649,21 @@ Generated: ${new Date().toLocaleDateString('ja-JP')}
             });
         }
     </script>
+
+<script type="module">
+  import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
+
+  window.uploadMemoryImage = async function(file, userId) {
+    const filename = `${Date.now()}_${file.name}`;
+    const storage = getStorage();
+    const fileRef = ref(storage, `images/${userId}/${filename}`);
+    const snapshot = await uploadBytes(fileRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    console.log('✅ Modular Upload Success:', downloadURL);
+    return downloadURL;
+  };
+</script>
+
 </body>
 </html>
                     

@@ -1,0 +1,162 @@
+=========================================
+① uploadMemoryImage() 関数コード全体
+=========================================
+async uploadMemoryImage(file, userId) {
+    if (!file || !userId) throw new Error('fileまたはuserIdが未定義です');
+    
+    const filename = `${Date.now()}_${file.name}`;
+    const storageRef = firebase.storage().ref(`images/${userId}/${filename}`);
+    const snapshot = await storageRef.put(file);
+    const downloadURL = await snapshot.ref.getDownloadURL();
+    return downloadURL;
+}
+
+=========================================
+② saveMemory() 関数コード全体
+=========================================
+async saveMemory() {
+    const date = document.getElementById('memoryDate').value;
+    const category = document.getElementById('memoryCategory').value;
+    const content = document.getElementById('memoryContent').value;
+    const imageFile = document.getElementById('memoryImage').files[0];
+    
+    console.log('Saving memory:', { date, category, content, hasImage: !!imageFile });
+    
+    // バリデーション
+    if (!date || !content) {
+        this.showNotification('日付と内容を入力してください', 'error');
+        return;
+    }
+
+    // プレミアムユーザーはAI感情分析Proを使用
+    let emotion;
+    if (this.storageManager.currentPlan === 'premium') {
+        const proAnalysis = await this.aiEmotionPro.analyzeEmotionPro(content);
+        if (proAnalysis.success) {
+            emotion = {
+                dominant: proAnalysis.analysis.basic.dominant,
+                analysis: proAnalysis.analysis.basic.dominant + ' ' + 
+                         (proAnalysis.analysis.advanced?.emotions?.primary || ''),
+                scores: proAnalysis.analysis.basic.scores,
+                advanced: proAnalysis.analysis.advanced
+            };
+        } else {
+            emotion = this.analyzeEmotion(content);
+        }
+    } else {
+        emotion = this.analyzeEmotion(content);
+    }
+
+    const memory = {
+        id: Date.now(),
+        date: date,
+        category: category,
+        content: content,
+        emotion: emotion,
+        timestamp: new Date().toISOString()
+    };
+
+    console.log('Memory object created:', memory);
+
+    if (imageFile) {
+        console.log('Image file detected:', imageFile.name, imageFile.type, imageFile.size);
+        
+        // 画像タイプの確認
+        if (!imageFile.type.startsWith('image/')) {
+            console.error('Invalid file type:', imageFile.type);
+            this.showNotification('画像ファイルを選択してください', 'error');
+            return;
+        }
+        
+        // ファイルサイズを確認
+        const fileSizeInMB = imageFile.size / (1024 * 1024);
+        console.log(`画像サイズ: ${fileSizeInMB.toFixed(2)}MB`);
+        
+        // 画像サイズ制限（5MB）
+        if (fileSizeInMB > 5) {
+            this.showNotification('画像サイズは5MB以下にしてください', 'error');
+            return;
+        }
+        
+        // Firebase Authentication確認
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            this.showNotification('ログインしてください', 'error');
+            return;
+        }
+        
+        try {
+            this.showNotification('画像をアップロード中...', 'info');
+            
+            // uploadMemoryImage関数を使用
+            const imageUrl = await this.uploadMemoryImage(imageFile, user.uid);
+            console.log('画像アップロード成功:', imageUrl);
+            
+            // メモリーにimageUrlを設定
+            memory.imageUrl = imageUrl;
+            console.log('✅ 保存されるURL:', memory.imageUrl);
+            
+            this.showNotification('画像アップロード完了', 'success');
+            this.addMemory(memory);
+            
+        } catch (error) {
+            console.error('画像アップロードエラー:', error);
+            this.showNotification('画像アップロードに失敗しました', 'error');
+            
+            // エラーでも画像なしで保存するか確認
+            if (confirm('画像のアップロードに失敗しました。画像なしで保存しますか？')) {
+                this.addMemory(memory);
+            }
+        }
+    } else {
+        this.addMemory(memory);
+    }
+}
+
+=========================================
+③ Firebase Storage のルール
+=========================================
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 画像フォルダへのアクセスルール
+    match /images/{userId}/{allPaths=**} {
+      // 読み取りは誰でも可能（公開アクセス）
+      allow read: if true;
+      // 書き込みは自分のフォルダのみ
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 全ての画像への読み取りアクセスを許可（CORSエラー対策）
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
+
+=========================================
+④ 表示側のHTML（画像表示部分）
+=========================================
+${(memory.imageUrl || memory.image) ? `<img src="${memory.imageUrl || memory.image}" alt="思い出の写真" class="memory-image">` : ''}
+
+=========================================
+⑤ コンソールログ出力箇所
+=========================================
+- 1787行目: console.log('Saving memory:', { date, category, content, hasImage: !!imageFile });
+- 1823行目: console.log('Memory object created:', memory);
+- 1857行目: console.log('画像アップロード成功:', imageUrl);
+- 1861行目: console.log('✅ 保存されるURL:', memory.imageUrl);
+- 2039行目: console.log('🖼️ 表示する画像URL:', memory.imageUrl);
+
+=========================================
+⑥ cors.json の中身
+=========================================
+[
+  {
+    "origin": ["https://www.memory-fragments.com"],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization"]
+  }
+]
