@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Memory Fragments - 思い出を記録</title>
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 15s ease infinite',
+                        'gradient-y': 'gradient-y 15s ease infinite',
+                        'gradient-xy': 'gradient-xy 15s ease infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'glow': 'glow 2s ease-in-out infinite',
+                        'slide-up': 'slide-up 0.5s ease-out',
+                        'fade-in': 'fade-in 0.6s ease-out',
+                        'bounce-in': 'bounce-in 0.6s ease-out',
+                        'morph': 'morph 8s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            }
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        'shimmer': {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        'glow': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.8 }
+                        },
+                        'slide-up': {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        },
+                        'fade-in': {
+                            '0%': { opacity: 0 },
+                            '100%': { opacity: 1 }
+                        },
+                        'bounce-in': {
+                            '0%': { opacity: 0, transform: 'scale(0.3)' },
+                            '50%': { transform: 'scale(1.05)' },
+                            '70%': { transform: 'scale(0.9)' },
+                            '100%': { opacity: 1, transform: 'scale(1)' }
+                        },
+                        'morph': {
+                            '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+                            '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' }
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* カスタムCSS */
+        .gradient-text {
+            background: linear-gradient(to right, #ec4899, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+        
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .neon-glow {
+            box-shadow: 
+                0 0 20px rgba(139, 92, 246, 0.5),
+                0 0 40px rgba(139, 92, 246, 0.3),
+                0 0 60px rgba(139, 92, 246, 0.1);
+        }
+        
+        .text-neon {
+            text-shadow: 
+                0 0 10px rgba(139, 92, 246, 0.8),
+                0 0 20px rgba(139, 92, 246, 0.6),
+                0 0 30px rgba(139, 92, 246, 0.4);
+        }
+        
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #ec4899, #8b5cf6);
+            border-radius: 10px;
+        }
+        
+        /* 背景のアニメーション */
+        .animated-bg {
+            background: linear-gradient(-45deg, #000428, #004e92, #009ffd, #2a2a72, #000428);
+            background-size: 400% 400%;
+            animation: gradient-xy 20s ease infinite;
+        }
+        
+        @keyframes gradient-xy {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+        
+        /* パーティクル効果 */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: float-particle 20s infinite linear;
+        }
+        
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.5;
+            }
+            90% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-10vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+        
+        /* ホログラフィック効果 */
+        .holographic {
+            background: linear-gradient(
+                45deg,
+                #ff0080,
+                #ff8c00,
+                #ffd700,
+                #00ff00,
+                #00ffff,
+                #ff00ff,
+                #ff0080
+            );
+            background-size: 300% 300%;
+            animation: gradient-xy 5s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+        
+        /* 3D効果 */
+        .transform-3d {
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+            transition: transform 0.6s;
+        }
+        
+        .transform-3d:hover {
+            transform: perspective(1000px) rotateX(5deg) rotateY(-5deg);
+        }
+        
+        /* モーフィング形状 */
+        .blob {
+            position: absolute;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            filter: blur(40px);
+            opacity: 0.7;
+            animation: morph 8s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen animated-bg overflow-x-hidden relative">
+    <!-- パーティクル背景 -->
+    <div id="particles" class="fixed inset-0 pointer-events-none"></div>
+    
+    <!-- アニメーションブロブ -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="blob w-96 h-96 -top-48 -left-48"></div>
+        <div class="blob w-96 h-96 -bottom-48 -right-48" style="animation-delay: 4s;"></div>
+        <div class="blob w-64 h-64 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <div class="relative z-10 container mx-auto px-4 py-8">
+        <!-- ヘッダー -->
+        <header class="text-center mb-12 animate-slide-up">
+            <h1 class="text-6xl md:text-8xl font-black mb-4 holographic animate-pulse-slow">
+                Memory Fragments
+            </h1>
+            <p class="text-xl text-gray-300 font-light tracking-wider">
+                <span class="inline-block animate-fade-in" style="animation-delay: 0.2s">あなたの</span>
+                <span class="inline-block animate-fade-in" style="animation-delay: 0.4s">大切な</span>
+                <span class="inline-block animate-fade-in" style="animation-delay: 0.6s">思い出を</span>
+                <span class="inline-block animate-fade-in" style="animation-delay: 0.8s">永遠に</span>
+            </p>
+            
+            <!-- 装飾的な要素 -->
+            <div class="flex justify-center items-center gap-4 mt-6">
+                <div class="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent w-32"></div>
+                <div class="text-purple-400 animate-spin-slow">
+                    <i class="fas fa-sparkles text-2xl"></i>
+                </div>
+                <div class="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent w-32"></div>
+            </div>
+        </header>
+        
+        <!-- 認証セクション -->
+        <div class="max-w-md mx-auto mb-12 animate-bounce-in" id="authSection">
+            <div class="glass-morphism rounded-3xl p-8 shadow-2xl neon-glow transform-3d">
+                <h2 class="text-3xl font-bold text-center mb-8 gradient-text">
+                    Welcome Back
+                </h2>
+                
+                <form onsubmit="event.preventDefault(); login();" class="space-y-6">
+                    <div class="relative group">
+                        <input type="email" id="loginEmail" 
+                               class="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all duration-300 peer"
+                               placeholder=" " value="hsuwa34@gmail.com" required>
+                        <label class="absolute left-6 -top-3 text-sm text-purple-400 bg-gray-900 px-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-400 transition-all duration-300">
+                            メールアドレス
+                        </label>
+                        <i class="fas fa-envelope absolute right-6 top-4 text-purple-400 opacity-50 group-focus-within:opacity-100 transition-opacity"></i>
+                    </div>
+                    
+                    <div class="relative group">
+                        <input type="password" id="loginPassword" 
+                               class="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all duration-300 peer"
+                               placeholder=" " required>
+                        <label class="absolute left-6 -top-3 text-sm text-purple-400 bg-gray-900 px-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-400 transition-all duration-300">
+                            パスワード
+                        </label>
+                        <i class="fas fa-lock absolute right-6 top-4 text-purple-400 opacity-50 group-focus-within:opacity-100 transition-opacity"></i>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button type="submit" 
+                                class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl font-semibold text-white shadow-lg hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-300 relative overflow-hidden group">
+                            <span class="relative z-10" id="loginBtnText">ログイン</span>
+                            <div class="absolute inset-0 bg-gradient-to-r from-purple-700 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <div class="absolute inset-0 bg-white opacity-0 group-active:opacity-20 transition-opacity"></div>
+                        </button>
+                        
+                        <button type="button" onclick="resetPassword()"
+                                class="w-full py-4 bg-white/5 border-2 border-white/20 rounded-2xl font-semibold text-white hover:bg-white/10 hover:border-white/30 transform hover:scale-105 transition-all duration-300">
+                            パスワードをお忘れの方
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="authStatus" class="mt-6"></div>
+                
+                <!-- ソーシャルログイン風の装飾 -->
+                <div class="mt-8 flex items-center justify-center gap-4">
+                    <div class="h-px bg-white/20 flex-1"></div>
+                    <span class="text-gray-400 text-sm">または</span>
+                    <div class="h-px bg-white/20 flex-1"></div>
+                </div>
+                
+                <div class="mt-6 flex justify-center gap-4">
+                    <button class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110">
+                        <i class="fab fa-google text-white"></i>
+                    </button>
+                    <button class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110">
+                        <i class="fab fa-apple text-white"></i>
+                    </button>
+                    <button class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-300 hover:scale-110">
+                        <i class="fab fa-twitter text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- アップロードセクション -->
+        <div class="max-w-2xl mx-auto mb-12 animate-slide-up" id="uploadSection" style="display: none;">
+            <div class="glass-morphism rounded-3xl p-8 shadow-2xl">
+                <h2 class="text-3xl font-bold mb-8 gradient-text flex items-center justify-center gap-3">
+                    <i class="fas fa-feather-pointed animate-float"></i>
+                    新しい記憶を記録
+                </h2>
+                
+                <form class="space-y-6">
+                    <div class="relative">
+                        <input type="text" id="title" 
+                               class="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-transparent focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all duration-300 peer"
+                               placeholder=" " required>
+                        <label class="absolute left-6 -top-3 text-sm text-purple-400 bg-gray-900 px-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-400 transition-all duration-300">
+                            タイトル
+                        </label>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea id="content" rows="5"
+                                  class="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-transparent focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all duration-300 peer resize-none"
+                                  placeholder=" " required></textarea>
+                        <label class="absolute left-6 -top-3 text-sm text-purple-400 bg-gray-900 px-2 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-3 peer-focus:text-sm peer-focus:text-purple-400 transition-all duration-300">
+                            思い出の詳細
+                        </label>
+                    </div>
+                    
+                    <div class="relative">
+                        <select id="category" 
+                                class="w-full px-6 py-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all duration-300 appearance-none cursor-pointer"
+                                required>
+                            <option value="" class="bg-gray-800">カテゴリーを選択</option>
+                            <option value="日常" class="bg-gray-800">🌅 日常</option>
+                            <option value="旅行" class="bg-gray-800">✈️ 旅行</option>
+                            <option value="仕事" class="bg-gray-800">💼 仕事</option>
+                            <option value="趣味" class="bg-gray-800">🎨 趣味</option>
+                            <option value="家族" class="bg-gray-800">👨‍👩‍👧‍👦 家族</option>
+                            <option value="その他" class="bg-gray-800">📌 その他</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-6 top-5 text-purple-400 pointer-events-none"></i>
+                    </div>
+                    
+                    <!-- カスタムファイルアップロード -->
+                    <div class="relative group">
+                        <input type="file" id="imageFile" accept="image/*" capture="environment" 
+                               class="absolute inset-0 opacity-0 cursor-pointer" 
+                               onchange="updateFileLabel(this)">
+                        <div class="w-full px-6 py-8 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-dashed border-purple-400/50 rounded-2xl text-center hover:border-purple-400 hover:bg-purple-600/30 transition-all duration-300">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-purple-400 mb-2"></i>
+                            <p class="text-purple-300 font-medium" id="fileLabel">写真をドラッグ＆ドロップまたはクリックして選択</p>
+                            <p class="text-purple-400/70 text-sm mt-1">JPG, PNG, GIF (最大 10MB)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- アップロードプログレス -->
+                    <div id="uploadProgress" class="hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-purple-400 text-sm">アップロード中...</span>
+                            <span class="text-purple-400 text-sm" id="progressText">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full transition-all duration-300 relative" id="progressFill">
+                                <div class="absolute inset-0 bg-white/30 animate-shimmer"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" onclick="saveMemory()"
+                            class="w-full py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-2xl font-bold text-white shadow-lg hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-300 relative overflow-hidden group text-lg">
+                        <span class="relative z-10 flex items-center justify-center gap-3" id="saveBtnText">
+                            <i class="fas fa-save"></i>
+                            記憶を永遠に保存
+                        </span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-purple-700 via-pink-700 to-red-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </button>
+                </form>
+                
+                <div id="status" class="mt-6"></div>
+            </div>
+        </div>
+        
+        <!-- メモリーグリッド -->
+        <div id="memoriesContainer">
+            <h2 class="text-4xl font-bold text-center mb-8 gradient-text" id="memoriesTitle" style="display: none;">
+                <i class="fas fa-book-open mr-3"></i>
+                記録された思い出たち
+            </h2>
+            <div id="memoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // パーティクル生成
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+        createParticles();
+        
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.firebasestorage.app",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        const db = firebase.firestore();
+        
+        let currentUser = null;
+        let memories = [];
+        
+        // ファイル選択時のラベル更新
+        function updateFileLabel(input) {
+            const label = document.getElementById('fileLabel');
+            if (input.files && input.files[0]) {
+                label.textContent = `📎 ${input.files[0].name}`;
+            } else {
+                label.textContent = '写真をドラッグ＆ドロップまたはクリックして選択';
+            }
+        }
+        
+        // 認証状態の監視
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+                loadMemories();
+            } else {
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('uploadSection').style.display = 'none';
+            }
+        });
+        
+        // ログイン
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btnText = document.getElementById('loginBtnText');
+            
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ログイン中...';
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showStatus('authStatus', '✨ ログイン成功！', false);
+            } catch (error) {
+                showStatus('authStatus', `⚠️ ${error.message}`, true);
+                btnText.innerHTML = 'ログイン';
+            }
+        }
+        
+        // パスワードリセット
+        async function resetPassword() {
+            const email = document.getElementById('loginEmail').value;
+            if (!email) {
+                showStatus('authStatus', '⚠️ メールアドレスを入力してください', true);
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showStatus('authStatus', '✉️ パスワードリセットメールを送信しました', false);
+            } catch (error) {
+                showStatus('authStatus', `⚠️ ${error.message}`, true);
+            }
+        }
+        
+        // 記憶を保存
+        async function saveMemory() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            
+            if (!title || !content || !category) {
+                showStatus('status', '⚠️ すべての項目を入力してください', true);
+                return;
+            }
+            
+            if (!currentUser) {
+                showStatus('status', '⚠️ ログインしてください', true);
+                return;
+            }
+            
+            const btnText = document.getElementById('saveBtnText');
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+            
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            
+            const memory = {
+                title,
+                content,
+                category,
+                createdAt: new Date().toISOString(),
+                userId: currentUser.uid
+            };
+            
+            // 画像がある場合
+            if (imageFile) {
+                try {
+                    const imageUrl = await uploadToFirebase(imageFile);
+                    if (imageUrl) {
+                        memory.imageUrl = imageUrl;
+                    } else {
+                        memory.imageData = await convertToBase64(imageFile);
+                    }
+                } catch (error) {
+                    console.error('画像処理エラー:', error);
+                    memory.imageData = await convertToBase64(imageFile);
+                }
+            }
+            
+            // Firestoreに保存
+            try {
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('memories').add(memory);
+                
+                showStatus('status', '✅ 思い出を保存しました！', false);
+                clearForm();
+                loadMemories();
+            } catch (error) {
+                saveToLocal(memory);
+            } finally {
+                btnText.innerHTML = '<i class="fas fa-save mr-2"></i>記憶を永遠に保存';
+                document.getElementById('uploadProgress').classList.add('hidden');
+            }
+        }
+        
+        // Firebase Storageアップロード
+        async function uploadToFirebase(file) {
+            return new Promise((resolve) => {
+                const fileName = `memories/${currentUser.uid}/${Date.now()}_${file.name}`;
+                const storageRef = storage.ref(fileName);
+                const uploadTask = storageRef.put(file);
+                
+                const timeout = setTimeout(() => {
+                    uploadTask.cancel();
+                    resolve(null);
+                }, 30000);
+                
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        document.getElementById('progressFill').style.width = progress + '%';
+                        document.getElementById('progressText').textContent = Math.round(progress) + '%';
+                    },
+                    (error) => {
+                        clearTimeout(timeout);
+                        console.error('Upload error:', error);
+                        resolve(null);
+                    },
+                    async () => {
+                        clearTimeout(timeout);
+                        try {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(url);
+                        } catch (error) {
+                            resolve(null);
+                        }
+                    }
+                );
+            });
+        }
+        
+        // Base64変換
+        function convertToBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // ローカルストレージに保存
+        function saveToLocal(memory) {
+            memory.id = Date.now().toString();
+            memories.unshift(memory);
+            localStorage.setItem('memories', JSON.stringify(memories));
+            showStatus('status', '✅ ローカルに保存しました', false);
+            displayMemories();
+        }
+        
+        // 記憶を読み込み
+        async function loadMemories() {
+            if (!currentUser) return;
+            
+            try {
+                const snapshot = await db.collection('users').doc(currentUser.uid)
+                    .collection('memories')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                memories = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('読み込みエラー:', error);
+                memories = JSON.parse(localStorage.getItem('memories') || '[]');
+            }
+            
+            displayMemories();
+        }
+        
+        // 記憶を表示
+        function displayMemories() {
+            const grid = document.getElementById('memoriesGrid');
+            const title = document.getElementById('memoriesTitle');
+            
+            if (memories.length === 0) {
+                title.style.display = 'none';
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-20">
+                        <div class="inline-block p-8 glass-morphism rounded-3xl">
+                            <i class="fas fa-photo-video text-6xl text-purple-400 mb-4 block animate-pulse-slow"></i>
+                            <p class="text-xl text-gray-300 mb-2">まだ思い出がありません</p>
+                            <p class="text-gray-400">最初の思い出を記録してみましょう</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            title.style.display = 'block';
+            grid.innerHTML = memories.map((memory, index) => `
+                <div class="group relative glass-morphism rounded-2xl overflow-hidden transform-3d hover:scale-105 transition-all duration-300 animate-fade-in" style="animation-delay: ${index * 0.1}s">
+                    <div class="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button onclick="deleteMemory('${memory.id}')" 
+                                class="w-10 h-10 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    
+                    ${memory.imageUrl || memory.imageData ? `
+                        <div class="h-48 overflow-hidden">
+                            <img src="${memory.imageUrl || memory.imageData}" 
+                                 alt="${escapeHtml(memory.title)}" 
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        </div>
+                    ` : `
+                        <div class="h-48 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
+                            <i class="fas fa-image text-6xl text-purple-400/50"></i>
+                        </div>
+                    `}
+                    
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-xl font-bold text-white group-hover:gradient-text transition-all duration-300">
+                                ${escapeHtml(memory.title)}
+                            </h3>
+                        </div>
+                        
+                        <span class="inline-block px-3 py-1 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-full text-sm text-purple-300 mb-3">
+                            ${memory.category}
+                        </span>
+                        
+                        <p class="text-gray-300 line-clamp-3 mb-4">
+                            ${escapeHtml(memory.content)}
+                        </p>
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-400">
+                            <span class="flex items-center gap-2">
+                                <i class="far fa-calendar"></i>
+                                ${new Date(memory.createdAt).toLocaleDateString('ja-JP')}
+                            </span>
+                            <span class="flex items-center gap-2">
+                                <i class="far fa-clock"></i>
+                                ${new Date(memory.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 記憶を削除
+        async function deleteMemory(id) {
+            if (!confirm('この思い出を削除しますか？')) return;
+            
+            if (currentUser) {
+                try {
+                    await db.collection('users').doc(currentUser.uid)
+                        .collection('memories').doc(id).delete();
+                } catch (error) {
+                    console.error('削除エラー:', error);
+                }
+            }
+            
+            memories = memories.filter(m => m.id !== id);
+            localStorage.setItem('memories', JSON.stringify(memories));
+            displayMemories();
+        }
+        
+        // フォームクリア
+        function clearForm() {
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('imageFile').value = '';
+            document.getElementById('fileLabel').textContent = '写真をドラッグ＆ドロップまたはクリックして選択';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = '0%';
+        }
+        
+        // ステータス表示
+        function showStatus(elementId, message, isError) {
+            const element = document.getElementById(elementId);
+            const bgColor = isError ? 'bg-red-500/20' : 'bg-green-500/20';
+            const borderColor = isError ? 'border-red-500/50' : 'border-green-500/50';
+            const textColor = isError ? 'text-red-300' : 'text-green-300';
+            
+            element.innerHTML = `
+                <div class="${bgColor} ${borderColor} ${textColor} border-2 rounded-xl px-4 py-3 animate-slide-up">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+        
+        // HTMLエスケープ
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 初期読み込み
+        window.onload = () => {
+            const localMemories = localStorage.getItem('memories');
+            if (localMemories) {
+                memories = JSON.parse(localMemories);
+                displayMemories();
+            }
+        };
+    </script>
+</body>
+</html>

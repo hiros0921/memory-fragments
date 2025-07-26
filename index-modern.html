@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Memory Fragments - 思い出を記録</title>
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #8b5cf6;
+            --surface: rgba(255, 255, 255, 0.05);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --text: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --success: #10b981;
+            --error: #ef4444;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* 背景エフェクト */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-20px, -20px) scale(1.05); }
+            66% { transform: translate(20px, -10px) scale(0.95); }
+        }
+        
+        /* グラスモーフィズム効果 */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* ヘッダー */
+        .header {
+            text-align: center;
+            padding: 60px 0 40px;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            animation: glow 3s ease-in-out infinite;
+            letter-spacing: -0.02em;
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+        
+        /* 認証セクション */
+        .auth-section {
+            max-width: 420px;
+            margin: 0 auto 40px;
+            padding: 40px;
+            border-radius: 24px;
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .auth-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        
+        /* フォーム要素 */
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        /* カスタムファイル入力 */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 20px;
+            background: var(--gradient-1);
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        /* ボタン */
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        /* アップロードセクション */
+        .upload-section {
+            max-width: 600px;
+            margin: 0 auto 40px;
+            padding: 40px;
+            border-radius: 24px;
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        /* メモリーグリッド */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+        
+        .memory-item {
+            padding: 28px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .memory-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+        
+        .memory-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: transparent;
+        }
+        
+        .memory-item:hover::before {
+            opacity: 0.1;
+        }
+        
+        .memory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+        
+        .memory-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        
+        .memory-date {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .memory-category {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--gradient-1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 16px;
+        }
+        
+        .memory-content {
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        .memory-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 16px 0;
+            transition: transform 0.3s ease;
+        }
+        
+        .memory-image:hover {
+            transform: scale(1.02);
+        }
+        
+        /* 削除ボタン */
+        .delete-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ef4444;
+            font-weight: bold;
+            opacity: 0;
+        }
+        
+        .memory-item:hover .delete-btn {
+            opacity: 1;
+        }
+        
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            transform: scale(1.1);
+        }
+        
+        /* ステータスメッセージ */
+        .status {
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* プログレスバー */
+        #uploadProgress {
+            margin: 20px 0;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-1);
+            border-radius: 100px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* エンプティステート */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 40px 0 30px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .auth-section, .upload-section {
+                padding: 24px;
+            }
+            
+            .memory-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .memory-item {
+                padding: 20px;
+            }
+        }
+        
+        /* ローディングアニメーション */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* アイコン */
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Memory Fragments</h1>
+            <p class="subtitle">あなたの大切な思い出を、美しく記録する</p>
+        </div>
+        
+        <div class="auth-section glass" id="authSection">
+            <h2>ようこそ</h2>
+            <form onsubmit="event.preventDefault(); login();">
+                <div class="form-group">
+                    <input type="email" id="loginEmail" placeholder="メールアドレス" value="hsuwa34@gmail.com" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="パスワード" required>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        <span id="loginBtnText">ログイン</span>
+                        <span class="loading" style="display: none;"></span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetPassword()">
+                        パスワードリセット
+                    </button>
+                </div>
+            </form>
+            <div id="authStatus"></div>
+        </div>
+        
+        <div class="upload-section glass" id="uploadSection" style="display: none;">
+            <h2>新しい記憶を記録</h2>
+            
+            <div class="form-group">
+                <input type="text" id="title" placeholder="タイトルを入力（例：夏の思い出）" required>
+            </div>
+            
+            <div class="form-group">
+                <textarea id="content" placeholder="この記憶について詳しく書いてください..." rows="5" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <select id="category" required>
+                    <option value="">カテゴリーを選択</option>
+                    <option value="日常">🌅 日常</option>
+                    <option value="旅行">✈️ 旅行</option>
+                    <option value="仕事">💼 仕事</option>
+                    <option value="趣味">🎨 趣味</option>
+                    <option value="家族">👨‍👩‍👧‍👦 家族</option>
+                    <option value="その他">📌 その他</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <div class="file-input-wrapper">
+                    <label for="imageFile" class="file-input-label">
+                        <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/>
+                        </svg>
+                        <span id="fileLabel">写真を選択またはカメラで撮影</span>
+                    </label>
+                    <input type="file" id="imageFile" accept="image/*" capture="environment" onchange="updateFileLabel(this)">
+                </div>
+            </div>
+            
+            <div id="uploadProgress" style="display: none;">
+                <p>アップロード中...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveMemory()" style="width: 100%; margin-top: 24px;">
+                <span id="saveBtnText">💾 記憶を保存</span>
+                <span class="loading" style="display: none;"></span>
+            </button>
+            
+            <div id="status"></div>
+        </div>
+        
+        <div id="memoriesGrid" class="memory-grid"></div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+            authDomain: "memory-fragments.firebaseapp.com",
+            projectId: "memory-fragments",
+            storageBucket: "memory-fragments.firebasestorage.app",
+            messagingSenderId: "798156189875",
+            appId: "1:798156189875:web:404069566f9fa68a8580c6"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        const db = firebase.firestore();
+        
+        let currentUser = null;
+        let memories = [];
+        
+        // ファイル選択時のラベル更新
+        function updateFileLabel(input) {
+            const label = document.getElementById('fileLabel');
+            if (input.files && input.files[0]) {
+                label.textContent = input.files[0].name;
+            } else {
+                label.textContent = '写真を選択またはカメラで撮影';
+            }
+        }
+        
+        // 認証状態の監視
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+                loadMemories();
+            } else {
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('uploadSection').style.display = 'none';
+            }
+        });
+        
+        // ログイン
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btnText = document.getElementById('loginBtnText');
+            const loading = btnText.nextElementSibling;
+            
+            btnText.style.display = 'none';
+            loading.style.display = 'inline-block';
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showStatus('authStatus', '✨ ログイン成功！', false);
+            } catch (error) {
+                showStatus('authStatus', `⚠️ ${error.message}`, true);
+            } finally {
+                btnText.style.display = 'inline';
+                loading.style.display = 'none';
+            }
+        }
+        
+        // パスワードリセット
+        async function resetPassword() {
+            const email = document.getElementById('loginEmail').value;
+            if (!email) {
+                showStatus('authStatus', 'メールアドレスを入力してください', true);
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showStatus('authStatus', '✉️ パスワードリセットメールを送信しました', false);
+            } catch (error) {
+                showStatus('authStatus', `⚠️ ${error.message}`, true);
+            }
+        }
+        
+        // 記憶を保存
+        async function saveMemory() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            
+            if (!title || !content || !category) {
+                showStatus('status', '⚠️ すべての項目を入力してください', true);
+                return;
+            }
+            
+            if (!currentUser) {
+                showStatus('status', '⚠️ ログインしてください', true);
+                return;
+            }
+            
+            const btnText = document.getElementById('saveBtnText');
+            const loading = btnText.nextElementSibling;
+            btnText.style.display = 'none';
+            loading.style.display = 'inline-block';
+            
+            document.getElementById('uploadProgress').style.display = 'block';
+            
+            const memory = {
+                title,
+                content,
+                category,
+                createdAt: new Date().toISOString(),
+                userId: currentUser.uid
+            };
+            
+            // 画像がある場合
+            if (imageFile) {
+                try {
+                    // まずFirebase Storageを試す
+                    const imageUrl = await uploadToFirebase(imageFile);
+                    if (imageUrl) {
+                        memory.imageUrl = imageUrl;
+                    } else {
+                        // 失敗したらBase64
+                        memory.imageData = await convertToBase64(imageFile);
+                    }
+                } catch (error) {
+                    console.error('画像処理エラー:', error);
+                    // エラーでもBase64で保存
+                    memory.imageData = await convertToBase64(imageFile);
+                }
+            }
+            
+            // Firestoreに保存
+            try {
+                await db.collection('users').doc(currentUser.uid)
+                    .collection('memories').add(memory);
+                
+                showStatus('status', '✅ 記憶を保存しました！', false);
+                clearForm();
+                loadMemories();
+            } catch (error) {
+                // Firestore失敗時はローカルストレージ
+                saveToLocal(memory);
+            } finally {
+                btnText.style.display = 'inline';
+                loading.style.display = 'none';
+                document.getElementById('uploadProgress').style.display = 'none';
+            }
+        }
+        
+        // Firebase Storageアップロード（30秒タイムアウト付き）
+        async function uploadToFirebase(file) {
+            return new Promise((resolve) => {
+                const fileName = `memories/${currentUser.uid}/${Date.now()}_${file.name}`;
+                const storageRef = storage.ref(fileName);
+                const uploadTask = storageRef.put(file);
+                
+                const timeout = setTimeout(() => {
+                    uploadTask.cancel();
+                    resolve(null);
+                }, 30000);
+                
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        document.getElementById('progressFill').style.width = progress + '%';
+                    },
+                    (error) => {
+                        clearTimeout(timeout);
+                        console.error('Upload error:', error);
+                        resolve(null);
+                    },
+                    async () => {
+                        clearTimeout(timeout);
+                        try {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(url);
+                        } catch (error) {
+                            resolve(null);
+                        }
+                    }
+                );
+            });
+        }
+        
+        // Base64変換
+        function convertToBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // ローカルストレージに保存
+        function saveToLocal(memory) {
+            memory.id = Date.now().toString();
+            memories.unshift(memory);
+            localStorage.setItem('memories', JSON.stringify(memories));
+            showStatus('status', '✅ ローカルに保存しました', false);
+            displayMemories();
+        }
+        
+        // 記憶を読み込み
+        async function loadMemories() {
+            if (!currentUser) return;
+            
+            try {
+                const snapshot = await db.collection('users').doc(currentUser.uid)
+                    .collection('memories')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                memories = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('読み込みエラー:', error);
+                memories = JSON.parse(localStorage.getItem('memories') || '[]');
+            }
+            
+            displayMemories();
+        }
+        
+        // 記憶を表示
+        function displayMemories() {
+            const grid = document.getElementById('memoriesGrid');
+            grid.innerHTML = '<h2 style="margin-bottom: 20px;">記録された思い出</h2>';
+            
+            if (memories.length === 0) {
+                grid.innerHTML += `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📸</div>
+                        <p>まだ思い出がありません</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">最初の思い出を記録してみましょう</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            memories.forEach(memory => {
+                const item = document.createElement('div');
+                item.className = 'memory-item glass';
+                item.innerHTML = `
+                    <div class="delete-btn" onclick="deleteMemory('${memory.id}')">×</div>
+                    <div class="memory-header">
+                        <div>
+                            <div class="memory-title">${escapeHtml(memory.title)}</div>
+                            <div class="memory-date">${new Date(memory.createdAt).toLocaleString('ja-JP')}</div>
+                        </div>
+                    </div>
+                    <span class="memory-category">${memory.category}</span>
+                    <div class="memory-content">${escapeHtml(memory.content)}</div>
+                    ${memory.imageUrl || memory.imageData ? 
+                        `<img src="${memory.imageUrl || memory.imageData}" alt="${memory.title}" class="memory-image">` : ''}
+                `;
+                grid.appendChild(item);
+            });
+        }
+        
+        // 記憶を削除
+        async function deleteMemory(id) {
+            if (!confirm('この思い出を削除しますか？')) return;
+            
+            if (currentUser) {
+                try {
+                    await db.collection('users').doc(currentUser.uid)
+                        .collection('memories').doc(id).delete();
+                } catch (error) {
+                    console.error('削除エラー:', error);
+                }
+            }
+            
+            memories = memories.filter(m => m.id !== id);
+            localStorage.setItem('memories', JSON.stringify(memories));
+            displayMemories();
+        }
+        
+        // フォームクリア
+        function clearForm() {
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('imageFile').value = '';
+            document.getElementById('fileLabel').textContent = '写真を選択またはカメラで撮影';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+        
+        // ステータス表示
+        function showStatus(elementId, message, isError) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isError ? 'status error' : 'status success';
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        // HTMLエスケープ
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 初期読み込み
+        window.onload = () => {
+            const localMemories = localStorage.getItem('memories');
+            if (localMemories) {
+                memories = JSON.parse(localMemories);
+                displayMemories();
+            }
+        };
+    </script>
+</body>
+</html>
