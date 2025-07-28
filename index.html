@@ -211,59 +211,83 @@
         <div id="searchSection" class="mb-8 hidden">
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
                 <h3 class="text-xl font-bold mb-4 text-purple-300">🔍 検索・フィルター</h3>
-            
-            <div style="margin-top: 15px;">
-                <input type="text" id="searchText" placeholder="タイトルや内容で検索..." style="width: 100%;">
+                
+                <div class="space-y-4">
+                    <input type="text" id="searchText" 
+                           placeholder="タイトルや内容で検索..."
+                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block mb-2 text-sm text-gray-300">開始日</label>
+                            <input type="date" id="dateFrom"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm text-gray-300">終了日</label>
+                            <input type="date" id="dateTo"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm text-gray-300">カテゴリー</label>
+                            <select id="categoryFilter"
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                                <option value="" class="bg-gray-800">すべて</option>
+                                <option value="日常" class="bg-gray-800">日常</option>
+                                <option value="旅行" class="bg-gray-800">旅行</option>
+                                <option value="仕事" class="bg-gray-800">仕事</option>
+                                <option value="趣味" class="bg-gray-800">趣味</option>
+                                <option value="家族" class="bg-gray-800">家族</option>
+                                <option value="その他" class="bg-gray-800">その他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="applyFilters()"
+                                class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300">
+                            検索
+                        </button>
+                        <button onclick="resetSearch()"
+                                class="flex-1 py-3 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transform hover:scale-105 transition-all duration-300 border border-white/20">
+                            リセット
+                        </button>
+                    </div>
+                </div>
             </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
-                <div>
-                    <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">開始日</label>
-                    <input type="date" id="dateFrom" style="width: 100%;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">終了日</label>
-                    <input type="date" id="dateTo" style="width: 100%;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">カテゴリー</label>
-                    <select id="categoryFilter" style="width: 100%;">
-                        <option value="">すべて</option>
-                        <option value="日常">日常</option>
-                        <option value="旅行">旅行</option>
-                        <option value="仕事">仕事</option>
-                        <option value="趣味">趣味</option>
-                        <option value="家族">家族</option>
-                        <option value="その他">その他</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div style="margin-top: 15px;">
-                <button onclick="applyFilters()">検索</button>
-                <button onclick="resetSearch()" style="background: rgba(255,255,255,0.2);">リセット</button>
+        
+        </div>
+        
+        <!-- タグフィルターセクション -->
+        <div id="filterSection" class="mb-8 hidden">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
+                <h3 class="text-xl font-bold mb-4 text-purple-300">🏷️ タグフィルター</h3>
+                <div id="allTags" class="flex flex-wrap gap-2 mb-4"></div>
+                <div id="activeFilters" class="text-sm text-gray-300 mb-4"></div>
+                <button onclick="clearFilters()"
+                        class="px-4 py-2 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transition-all duration-300 border border-white/20">
+                    タグフィルターをクリア
+                </button>
             </div>
         </div>
         
-        <div id="filterSection">
-            <h3>🏷️ タグフィルター</h3>
-            <div id="allTags" style="margin-top: 10px;"></div>
-            <div id="activeFilters"></div>
-            <button onclick="clearFilters()" style="margin-top: 10px;">タグフィルターをクリア</button>
+        <!-- 統計セクション -->
+        <div id="statsSection" class="mb-8 hidden">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
+                <h3 class="text-xl font-bold mb-6 text-purple-300">📊 統計・振り返り</h3>
+                <div id="statsContent"></div>
+            </div>
         </div>
         
-        <div id="statsSection" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 20px; display: none;">
-            <h3>📊 統計・振り返り</h3>
-            <div id="statsContent" style="margin-top: 20px;"></div>
-        </div>
-        
-        <div id="memoriesGrid" class="memory-grid"></div>
+        <!-- 記憶グリッド -->
+        <div id="memoriesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         
         <!-- 共有モーダル -->
-        <div id="shareModal" class="modal">
-            <div class="modal-content">
-                <span class="close-modal" onclick="closeShareModal()">&times;</span>
-                <h2>🔗 記憶を共有</h2>
+        <div id="shareModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div class="max-w-lg w-full mx-4 bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 rounded-2xl p-8 shadow-2xl border border-white/20">
+                <button onclick="closeShareModal()" 
+                        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-2xl">&times;</button>
+                <h2 class="text-2xl font-bold mb-6 text-purple-300">🔗 記憶を共有</h2>
                 <div id="shareContent"></div>
             </div>
         </div>
@@ -549,12 +573,12 @@
         // 記憶を表示
         function displayMemories() {
             const grid = document.getElementById('memoriesGrid');
-            grid.innerHTML = '<h2>保存された記憶</h2>';
+            grid.innerHTML = '';
             
             // 記憶がある場合は検索セクションと統計セクションを表示
             if (memories.length > 0) {
-                document.getElementById('searchSection').style.display = 'block';
-                document.getElementById('statsSection').style.display = 'block';
+                document.getElementById('searchSection').classList.remove('hidden');
+                document.getElementById('statsSection').classList.remove('hidden');
                 updateStatistics();
             }
             
@@ -568,7 +592,7 @@
             
             // フィルターセクションを表示（タグがある場合）
             if (allTags.size > 0) {
-                document.getElementById('filterSection').style.display = 'block';
+                document.getElementById('filterSection').classList.remove('hidden');
                 updateFilterSection();
             }
             
@@ -630,24 +654,39 @@
             
             filteredMemories.forEach(memory => {
                 const item = document.createElement('div');
-                item.className = 'memory-item';
+                item.className = 'bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 relative group';
                 item.innerHTML = `
-                    <div class="share-btn" onclick="shareMemory('${memory.id}')">🔗</div>
-                    <div class="delete-btn" onclick="deleteMemory('${memory.id}')">×</div>
-                    <div class="memory-title">${escapeHtml(memory.title)}</div>
-                    <div class="memory-date">${new Date(memory.createdAt).toLocaleString()}</div>
-                    <span class="memory-category">${memory.category}</span>
-                    <div class="memory-content">${escapeHtml(memory.content)}</div>
+                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="shareMemory('${memory.id}')" 
+                                class="w-10 h-10 bg-purple-600/50 rounded-full flex items-center justify-center hover:bg-purple-600 transition-all">
+                            🔗
+                        </button>
+                        <button onclick="deleteMemory('${memory.id}')" 
+                                class="w-10 h-10 bg-red-600/50 rounded-full flex items-center justify-center hover:bg-red-600 transition-all">
+                            ×
+                        </button>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-purple-300">${escapeHtml(memory.title)}</h3>
+                    <p class="text-sm text-gray-400 mb-2">${new Date(memory.createdAt).toLocaleString()}</p>
+                    <span class="inline-block px-3 py-1 bg-purple-600/30 rounded-full text-xs mb-4">${memory.category}</span>
+                    <p class="text-gray-300 mb-4 line-clamp-3">${escapeHtml(memory.content)}</p>
                     ${memory.tags && memory.tags.length > 0 ? 
-                        `<div class="memory-tags">
-                            ${memory.tags.map(tag => `<span class="tag tag-filter" onclick="toggleTagFilter('${tag}')">${tag}</span>`).join('')}
+                        `<div class="flex flex-wrap gap-2 mb-4">
+                            ${memory.tags.map(tag => `
+                                <span onclick="toggleTagFilter('${tag}')" 
+                                      class="px-3 py-1 bg-blue-600/30 rounded-full text-xs cursor-pointer hover:bg-blue-600/50 transition-all">
+                                    ${tag}
+                                </span>
+                            `).join('')}
                         </div>` : ''}
                     ${memory.imageUrl || memory.imageData ? 
-                        `<img src="${memory.imageUrl || memory.imageData}" alt="${memory.title}">` : ''}
+                        `<img src="${memory.imageUrl || memory.imageData}" alt="${memory.title}" 
+                              class="w-full h-48 object-cover rounded-lg mb-4">` : ''}
                     ${memory.location ? 
-                        `<div class="memory-location" onclick="openMap(${memory.location.lat}, ${memory.location.lng})">
+                        `<button onclick="openMap(${memory.location.lat}, ${memory.location.lng})" 
+                                 class="text-sm text-purple-300 hover:text-purple-400 transition-colors">
                             📍 位置情報あり (クリックで地図を開く)
-                        </div>` : ''}
+                        </button>` : ''}
                 `;
                 grid.appendChild(item);
             });
@@ -688,11 +727,15 @@
         function showStatus(elementId, message, isError) {
             const element = document.getElementById(elementId);
             element.textContent = message;
-            element.className = isError ? 'status error' : 'status success';
-            element.style.display = 'block';
+            element.className = `mt-4 p-3 rounded-lg text-center font-semibold transition-all ${
+                isError 
+                    ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                    : 'bg-green-500/20 text-green-300 border border-green-500/30'
+            }`;
             
             setTimeout(() => {
-                element.style.display = 'none';
+                element.textContent = '';
+                element.className = '';
             }, 5000);
         }
         
@@ -755,12 +798,14 @@
                 </div>
             `;
             
-            document.getElementById('shareModal').style.display = 'block';
+            document.getElementById('shareModal').classList.remove('hidden');
+            document.getElementById('shareModal').classList.add('flex');
         }
         
         // 共有モーダルを閉じる
         function closeShareModal() {
-            document.getElementById('shareModal').style.display = 'none';
+            document.getElementById('shareModal').classList.add('hidden');
+            document.getElementById('shareModal').classList.remove('flex');
         }
         
         // 共有リンクをコピー
@@ -803,7 +848,11 @@
             
             Array.from(allTags).sort().forEach(tag => {
                 const span = document.createElement('span');
-                span.className = `tag tag-filter ${activeTagFilters.has(tag) ? 'active' : ''}`;
+                span.className = `inline-block px-3 py-1 rounded-full text-sm cursor-pointer transition-all ${
+                    activeTagFilters.has(tag) 
+                        ? 'bg-purple-600 text-white' 
+                        : 'bg-purple-600/30 text-purple-300 hover:bg-purple-600/50'
+                }`;
                 span.textContent = tag;
                 span.onclick = () => toggleTagFilter(tag);
                 allTagsDiv.appendChild(span);
@@ -855,38 +904,40 @@
             
             // 統計HTML生成
             statsContent.innerHTML = `
-                <div class="stats-grid">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- 月別統計 -->
-                    <div class="stat-card">
-                        <h4>📅 ${currentYear}年の月別記憶数</h4>
-                        <div class="bar-chart">
+                    <div class="bg-white/5 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold mb-4 text-purple-300">📅 ${currentYear}年の月別記憶数</h4>
+                        <div class="space-y-2">
                             ${generateMonthChart(monthStats, currentYear)}
                         </div>
                     </div>
                     
                     <!-- カテゴリー別統計 -->
-                    <div class="stat-card">
-                        <h4>📂 カテゴリー別記憶数</h4>
-                        <div class="bar-chart">
+                    <div class="bg-white/5 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold mb-4 text-purple-300">📂 カテゴリー別記憶数</h4>
+                        <div class="space-y-2">
                             ${generateCategoryChart(categoryStats)}
                         </div>
                     </div>
                     
                     <!-- 年別統計 -->
-                    <div class="stat-card">
-                        <h4>📊 年別記憶数</h4>
-                        <div class="bar-chart">
+                    <div class="bg-white/5 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold mb-4 text-purple-300">📊 年別記憶数</h4>
+                        <div class="space-y-2">
                             ${generateYearChart(yearStats)}
                         </div>
                     </div>
                     
                     <!-- サマリー -->
-                    <div class="stat-card">
-                        <h4>✨ サマリー</h4>
-                        <p>総記憶数: <strong>${memories.length}</strong>件</p>
-                        <p>最も多いカテゴリー: <strong>${getMostFrequentCategory(categoryStats)}</strong></p>
-                        <p>今月の記憶数: <strong>${getCurrentMonthCount()}</strong>件</p>
-                        <p>今年の記憶数: <strong>${yearStats[currentYear] || 0}</strong>件</p>
+                    <div class="bg-white/5 rounded-xl p-6">
+                        <h4 class="text-lg font-semibold mb-4 text-purple-300">✨ サマリー</h4>
+                        <div class="space-y-2 text-gray-300">
+                            <p>総記憶数: <span class="text-purple-400 font-bold">${memories.length}</span>件</p>
+                            <p>最も多いカテゴリー: <span class="text-purple-400 font-bold">${getMostFrequentCategory(categoryStats)}</span></p>
+                            <p>今月の記憶数: <span class="text-purple-400 font-bold">${getCurrentMonthCount()}</span>件</p>
+                            <p>今年の記憶数: <span class="text-purple-400 font-bold">${yearStats[currentYear] || 0}</span>件</p>
+                        </div>
                     </div>
                 </div>
             `;
@@ -899,11 +950,16 @@
             
             return months.map(month => {
                 const count = monthStats[month] || 0;
-                const width = (count / maxCount) * 200;
+                const width = (count / maxCount) * 100;
                 return `
-                    <div class="bar">
-                        <div class="bar-label">${month}</div>
-                        <div class="bar-fill" style="width: ${width}px">${count}</div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-gray-400 w-12 text-right">${month}</span>
+                        <div class="flex-1 bg-white/10 rounded-full h-6 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-end px-2 text-xs font-semibold" 
+                                 style="width: ${width}%">
+                                ${count}
+                            </div>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -916,11 +972,16 @@
             return Object.entries(categoryStats)
                 .sort((a, b) => b[1] - a[1])
                 .map(([category, count]) => {
-                    const width = (count / maxCount) * 200;
+                    const width = (count / maxCount) * 100;
                     return `
-                        <div class="bar">
-                            <div class="bar-label">${category}</div>
-                            <div class="bar-fill" style="width: ${width}px">${count}</div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-400 w-16 text-right">${category}</span>
+                            <div class="flex-1 bg-white/10 rounded-full h-6 overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-end px-2 text-xs font-semibold" 
+                                     style="width: ${width}%">
+                                    ${count}
+                                </div>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -933,11 +994,16 @@
             return Object.entries(yearStats)
                 .sort((a, b) => a[0] - b[0])
                 .map(([year, count]) => {
-                    const width = (count / maxCount) * 200;
+                    const width = (count / maxCount) * 100;
                     return `
-                        <div class="bar">
-                            <div class="bar-label">${year}年</div>
-                            <div class="bar-fill" style="width: ${width}px">${count}</div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-400 w-16 text-right">${year}年</span>
+                            <div class="flex-1 bg-white/10 rounded-full h-6 overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-end px-2 text-xs font-semibold" 
+                                     style="width: ${width}%">
+                                    ${count}
+                                </div>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -991,7 +1057,7 @@
             preview.innerHTML = '';
             tags.forEach(tag => {
                 const span = document.createElement('span');
-                span.className = 'tag-input-preview';
+                span.className = 'inline-block px-3 py-1 bg-green-600/30 rounded-full text-xs text-green-300';
                 span.textContent = tag;
                 preview.appendChild(span);
             });
