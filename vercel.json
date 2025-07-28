@@ -1,1 +1,9 @@
-{"routes":[{"src":"/app","dest":"/app.html"},{"src":"/new","dest":"/app.html"}]}
+{
+  "routes": [
+    { "src": "/app", "dest": "/app.html" },
+    { "src": "/new", "dest": "/app.html" }
+  ],
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "framework": null
+}
