@@ -808,6 +808,113 @@
             displayMemories();
         }
         
+        // 単一の記憶を表示
+        function displaySingleMemory(memoryId) {
+            // 該当の記憶を検索
+            const memory = memories.find(m => m.id === memoryId);
+            
+            // Firebaseからも検索（ローカルになければ）
+            if (!memory && currentUser) {
+                db.collection('users').doc(currentUser.uid)
+                    .collection('memories').doc(memoryId).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const singleMemory = { id: doc.id, ...doc.data() };
+                            displaySingleMemoryView(singleMemory);
+                        } else {
+                            displayNotFound();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error getting memory:', error);
+                        displayNotFound();
+                    });
+            } else if (memory) {
+                displaySingleMemoryView(memory);
+            } else {
+                displayNotFound();
+            }
+        }
+        
+        // 単一の記憶ビューを表示
+        function displaySingleMemoryView(memory) {
+            // 不要な要素を非表示
+            document.getElementById('addMemoryForm').style.display = 'none';
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'none';
+            
+            const grid = document.getElementById('memoriesGrid');
+            grid.innerHTML = `
+                <div class="max-w-2xl mx-auto">
+                    <button onclick="window.location.href=window.location.pathname" 
+                            class="mb-6 px-4 py-2 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
+                        ← すべての記憶に戻る
+                    </button>
+                    
+                    <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
+                        <h2 class="text-3xl font-bold mb-4 text-purple-300">${escapeHtml(memory.title)}</h2>
+                        <p class="text-gray-400 mb-4">${new Date(memory.createdAt).toLocaleString()}</p>
+                        <span class="inline-block px-4 py-2 bg-purple-600/30 rounded-full text-sm mb-6">${memory.category}</span>
+                        
+                        <div class="text-gray-300 mb-6 whitespace-pre-wrap">${escapeHtml(memory.content)}</div>
+                        
+                        ${memory.tags && memory.tags.length > 0 ? 
+                            `<div class="flex flex-wrap gap-2 mb-6">
+                                ${memory.tags.map(tag => 
+                                    `<span class="px-3 py-1 bg-blue-600/30 rounded-full text-sm">${tag}</span>`
+                                ).join('')}
+                            </div>` : ''}
+                        
+                        ${memory.imageUrl || memory.imageData ? 
+                            `<img src="${memory.imageUrl || memory.imageData}" alt="${memory.title}" 
+                                  class="w-full rounded-lg mb-6 shadow-lg">` : ''}
+                        
+                        ${memory.location ? 
+                            `<button onclick="openMap(${memory.location.lat}, ${memory.location.lng})" 
+                                     class="text-sm text-purple-300 hover:text-purple-400 transition-colors">
+                                📍 位置情報あり (クリックで地図を開く)
+                            </button>` : ''}
+                        
+                        <div class="mt-8 pt-6 border-t border-white/20">
+                            <p class="text-sm text-gray-400 mb-4">この記憶を共有:</p>
+                            <div class="flex gap-4">
+                                <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(memory.title + ' - Memory Fragments')}&url=${encodeURIComponent(window.location.href)}" 
+                                   target="_blank" 
+                                   class="px-4 py-2 bg-blue-500/50 rounded-lg hover:bg-blue-500 transition-all">
+                                    X (Twitter)
+                                </a>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}" 
+                                   target="_blank" 
+                                   class="px-4 py-2 bg-blue-600/50 rounded-lg hover:bg-blue-600 transition-all">
+                                    Facebook
+                                </a>
+                                <a href="https://line.me/R/msg/text/?${encodeURIComponent(memory.title + ' ' + window.location.href)}" 
+                                   target="_blank" 
+                                   class="px-4 py-2 bg-green-500/50 rounded-lg hover:bg-green-500 transition-all">
+                                    LINE
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 記憶が見つからない場合
+        function displayNotFound() {
+            const grid = document.getElementById('memoriesGrid');
+            grid.innerHTML = `
+                <div class="text-center py-20">
+                    <p class="text-2xl text-gray-400 mb-4">記憶が見つかりませんでした</p>
+                    <button onclick="window.location.href=window.location.pathname" 
+                            class="px-6 py-3 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
+                        トップページに戻る
+                    </button>
+                </div>
+            `;
+        }
+
         // フォームクリア
         function clearForm() {
             document.getElementById('title').value = '';
@@ -857,7 +964,7 @@
             const memory = memories.find(m => m.id === memoryId);
             if (!memory) return;
             
-            const shareUrl = `${window.location.origin}${window.location.pathname}?memory=${memoryId}`;
+            const shareUrl = `${window.location.origin}${window.location.pathname}?id=${memoryId}`;
             const shareText = `${memory.title} - Memory Fragments`;
             
             const shareContent = document.getElementById('shareContent');
@@ -1273,10 +1380,21 @@
             generateStars();
             init3DScene();
             
+            // URLパラメータをチェック
+            const urlParams = new URLSearchParams(window.location.search);
+            const memoryId = urlParams.get('id');
+            
             const localMemories = localStorage.getItem('memories');
             if (localMemories) {
                 memories = JSON.parse(localMemories);
-                displayMemories();
+                
+                if (memoryId) {
+                    // 特定の記憶を表示
+                    displaySingleMemory(memoryId);
+                } else {
+                    // 通常の表示
+                    displayMemories();
+                }
             }
             
             // 画像選択時のイベント
