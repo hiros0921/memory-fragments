@@ -681,22 +681,40 @@
         
         // 単一の記憶を読み込み
         async function loadSingleMemory(memoryId) {
-            if (!currentUser) return;
+            console.log('Loading single memory:', memoryId);
+            
+            if (!currentUser) {
+                console.log('No current user, checking local storage');
+                // 認証前でもローカルストレージから表示
+                const localMemories = JSON.parse(localStorage.getItem('memories') || '[]');
+                const memory = localMemories.find(m => m.id === memoryId);
+                if (memory) {
+                    displaySingleMemoryView(memory);
+                } else {
+                    displayNotFound();
+                }
+                return;
+            }
             
             try {
+                // まずFirebaseから取得を試みる
                 const doc = await db.collection('users').doc(currentUser.uid)
                     .collection('memories').doc(memoryId).get();
                 
                 if (doc.exists) {
                     const memory = { id: doc.id, ...doc.data() };
+                    console.log('Found in Firebase:', memory);
                     displaySingleMemoryView(memory);
                 } else {
+                    console.log('Not found in Firebase, checking local storage');
                     // ローカルストレージから探す
                     const localMemories = JSON.parse(localStorage.getItem('memories') || '[]');
                     const memory = localMemories.find(m => m.id === memoryId);
                     if (memory) {
+                        console.log('Found in local storage:', memory);
                         displaySingleMemoryView(memory);
                     } else {
+                        console.log('Memory not found anywhere');
                         displayNotFound();
                     }
                 }
@@ -1422,6 +1440,19 @@
             const localMemories = localStorage.getItem('memories');
             if (localMemories) {
                 memories = JSON.parse(localMemories);
+            }
+            
+            // URLパラメータをチェック（認証前でも表示）
+            const urlParams = new URLSearchParams(window.location.search);
+            const memoryId = urlParams.get('id');
+            
+            if (memoryId && !currentUser) {
+                // 認証前に個別記憶を表示
+                console.log('Checking memory before auth:', memoryId);
+                const memory = memories.find(m => m.id === memoryId);
+                if (memory) {
+                    displaySingleMemoryView(memory);
+                }
             }
             
             // 画像選択時のイベント
