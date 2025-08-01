@@ -894,11 +894,25 @@
         
         // 単一の記憶ビューを表示
         function displaySingleMemoryView(memory) {
-            // 不要な要素を非表示
-            document.getElementById('addMemoryForm').style.display = 'none';
-            document.getElementById('searchSection').style.display = 'none';
-            document.getElementById('filterSection').style.display = 'none';
-            document.getElementById('statsSection').style.display = 'none';
+            // 不要な要素を非表示（要素が存在する場合のみ）
+            const addMemoryForm = document.getElementById('addMemoryForm');
+            if (addMemoryForm) addMemoryForm.style.display = 'none';
+            
+            const searchSection = document.getElementById('searchSection');
+            if (searchSection) searchSection.style.display = 'none';
+            
+            const filterSection = document.getElementById('filterSection');
+            if (filterSection) filterSection.style.display = 'none';
+            
+            const statsSection = document.getElementById('statsSection');
+            if (statsSection) statsSection.style.display = 'none';
+            
+            // 認証セクションも非表示
+            const authSection = document.getElementById('authSection');
+            if (authSection) authSection.style.display = 'none';
+            
+            const uploadSection = document.getElementById('uploadSection');
+            if (uploadSection) uploadSection.style.display = 'none';
             
             const grid = document.getElementById('memoriesGrid');
             grid.innerHTML = `
