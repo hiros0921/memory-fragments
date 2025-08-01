@@ -352,7 +352,18 @@
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('uploadSection').style.display = 'block';
                 showStatus('authStatus', `ログイン中: ${user.email}`, false);
-                loadMemories();
+                
+                // URLパラメータをチェック
+                const urlParams = new URLSearchParams(window.location.search);
+                const memoryId = urlParams.get('id');
+                
+                if (memoryId) {
+                    // 特定の記憶を表示
+                    loadSingleMemory(memoryId);
+                } else {
+                    // 通常の表示
+                    loadMemories();
+                }
             } else {
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('uploadSection').style.display = 'none';
@@ -666,6 +677,33 @@
             }
             
             displayMemories();
+        }
+        
+        // 単一の記憶を読み込み
+        async function loadSingleMemory(memoryId) {
+            if (!currentUser) return;
+            
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid)
+                    .collection('memories').doc(memoryId).get();
+                
+                if (doc.exists) {
+                    const memory = { id: doc.id, ...doc.data() };
+                    displaySingleMemoryView(memory);
+                } else {
+                    // ローカルストレージから探す
+                    const localMemories = JSON.parse(localStorage.getItem('memories') || '[]');
+                    const memory = localMemories.find(m => m.id === memoryId);
+                    if (memory) {
+                        displaySingleMemoryView(memory);
+                    } else {
+                        displayNotFound();
+                    }
+                }
+            } catch (error) {
+                console.error('読み込みエラー:', error);
+                displayNotFound();
+            }
         }
         
         // 記憶を表示
@@ -1380,21 +1418,10 @@
             generateStars();
             init3DScene();
             
-            // URLパラメータをチェック
-            const urlParams = new URLSearchParams(window.location.search);
-            const memoryId = urlParams.get('id');
-            
+            // ローカルストレージのメモリをロード（認証前でも表示できるように）
             const localMemories = localStorage.getItem('memories');
             if (localMemories) {
                 memories = JSON.parse(localMemories);
-                
-                if (memoryId) {
-                    // 特定の記憶を表示
-                    displaySingleMemory(memoryId);
-                } else {
-                    // 通常の表示
-                    displayMemories();
-                }
             }
             
             // 画像選択時のイベント
