@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Fragments - あなたの大切な思い出を永遠に</title>
     
+    <!-- 個別記憶表示時の初期非表示処理 -->
+    <script>
+        // URLパラメータを即座にチェックして、スタイルを適用
+        if (window.location.search.includes('?id=')) {
+            document.write('<style>#authSection, #uploadSection { display: none !important; visibility: hidden !important; }</style>');
+        }
+    </script>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -1458,13 +1466,25 @@
             const urlParams = new URLSearchParams(window.location.search);
             const memoryId = urlParams.get('id');
             
-            // 個別記憶表示モードの場合は、最初から認証画面を非表示に
+            // 個別記憶表示モードの場合は、最初から認証画面とアップロード画面を確実に非表示に
             if (memoryId) {
                 const authSection = document.getElementById('authSection');
-                if (authSection) authSection.style.display = 'none';
+                if (authSection) {
+                    authSection.style.display = 'none';
+                    authSection.style.visibility = 'hidden';
+                }
                 
                 const uploadSection = document.getElementById('uploadSection');
-                if (uploadSection) uploadSection.style.display = 'none';
+                if (uploadSection) {
+                    uploadSection.style.display = 'none';
+                    uploadSection.style.visibility = 'hidden';
+                }
+                
+                // フォーム要素も念のため非表示
+                const addMemoryForm = document.querySelector('#uploadSection .bg-white\\/10');
+                if (addMemoryForm) {
+                    addMemoryForm.style.display = 'none';
+                }
             }
             
             // ローカルストレージのメモリをロード（認証前でも表示できるように）
