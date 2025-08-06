@@ -348,14 +348,15 @@
         // 認証状態の監視
         auth.onAuthStateChanged((user) => {
             currentUser = user;
+            
+            // URLパラメータをチェック
+            const urlParams = new URLSearchParams(window.location.search);
+            const memoryId = urlParams.get('id');
+            
             if (user) {
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('uploadSection').style.display = 'block';
                 showStatus('authStatus', `ログイン中: ${user.email}`, false);
-                
-                // URLパラメータをチェック
-                const urlParams = new URLSearchParams(window.location.search);
-                const memoryId = urlParams.get('id');
                 
                 if (memoryId) {
                     // 特定の記憶を表示
@@ -365,8 +366,11 @@
                     loadMemories();
                 }
             } else {
-                document.getElementById('authSection').style.display = 'block';
-                document.getElementById('uploadSection').style.display = 'none';
+                // 認証されていない場合でも、個別記憶表示時は認証画面を表示しない
+                if (!memoryId) {
+                    document.getElementById('authSection').style.display = 'block';
+                    document.getElementById('uploadSection').style.display = 'none';
+                }
             }
         });
         
@@ -1450,15 +1454,24 @@
             generateStars();
             init3DScene();
             
+            // URLパラメータを最初にチェック
+            const urlParams = new URLSearchParams(window.location.search);
+            const memoryId = urlParams.get('id');
+            
+            // 個別記憶表示モードの場合は、最初から認証画面を非表示に
+            if (memoryId) {
+                const authSection = document.getElementById('authSection');
+                if (authSection) authSection.style.display = 'none';
+                
+                const uploadSection = document.getElementById('uploadSection');
+                if (uploadSection) uploadSection.style.display = 'none';
+            }
+            
             // ローカルストレージのメモリをロード（認証前でも表示できるように）
             const localMemories = localStorage.getItem('memories');
             if (localMemories) {
                 memories = JSON.parse(localMemories);
             }
-            
-            // URLパラメータをチェック（認証前でも表示）
-            const urlParams = new URLSearchParams(window.location.search);
-            const memoryId = urlParams.get('id');
             
             if (memoryId && !currentUser) {
                 // 認証前に個別記憶を表示
