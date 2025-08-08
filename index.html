@@ -1735,12 +1735,19 @@
             generateStars();
             init3DScene();
             
-            // 決済結果をチェック
-            checkPaymentResult();
-            
             // URLパラメータを最初にチェック
             const urlParams = new URLSearchParams(window.location.search);
             const memoryId = urlParams.get('id');
+            
+            // 決済結果をチェック
+            checkPaymentResult();
+            
+            // URLパラメータでアップグレードモーダルを表示
+            if (urlParams.get('upgrade') === 'true') {
+                setTimeout(() => {
+                    showUpgradeModal();
+                }, 1000);
+            }
             
             // 個別記憶表示モードの場合は、最初から認証画面とアップロード画面を確実に非表示に
             if (memoryId) {
