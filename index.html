@@ -138,6 +138,15 @@
                 <span class="gradient-text">Memory Fragments</span>
             </h1>
             <p class="text-xl text-gray-300">あなたの大切な思い出を永遠に</p>
+            
+            <!-- プレミアムステータス表示 -->
+            <div class="mt-6 flex justify-center items-center gap-4">
+                <span id="premiumStatus" class="px-4 py-2 bg-gray-600 rounded-full text-sm"></span>
+                <button id="upgradeButton" onclick="showUpgradeModal()" 
+                        class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all hidden">
+                    ✨ プレミアムにアップグレード
+                </button>
+            </div>
         </div>
         
         <!-- 認証セクション -->
@@ -316,6 +325,61 @@
                 <div id="shareContent"></div>
             </div>
         </div>
+        
+        <!-- アップグレードモーダル -->
+        <div id="upgradeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div class="max-w-lg w-full mx-4 bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 rounded-2xl p-8 shadow-2xl border border-white/20">
+                <button onclick="closeUpgradeModal()" 
+                        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-2xl">&times;</button>
+                <h2 class="text-3xl font-bold mb-6 text-center">
+                    <span class="gradient-text">🎉 プレミアムプラン</span>
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- 無料版 vs プレミアム版 -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/5 rounded-xl p-4 border border-gray-600">
+                            <h3 class="text-lg font-bold mb-3 text-gray-400">無料版</h3>
+                            <ul class="space-y-2 text-sm text-gray-500">
+                                <li>❌ 50件まで保存</li>
+                                <li>❌ 基本機能のみ</li>
+                                <li>❌ ローカル保存</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-xl p-4 border border-purple-500">
+                            <h3 class="text-lg font-bold mb-3 text-purple-300">プレミアム版</h3>
+                            <ul class="space-y-2 text-sm text-purple-200">
+                                <li>✅ 無制限保存</li>
+                                <li>✅ クラウド同期</li>
+                                <li>✅ 高度な検索</li>
+                                <li>✅ エクスポート機能</li>
+                                <li>✅ 優先サポート</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 価格 -->
+                    <div class="text-center bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-xl p-6 border border-purple-500/50">
+                        <p class="text-sm text-gray-400 mb-2">月額プラン</p>
+                        <div class="flex items-end justify-center gap-2">
+                            <span class="text-4xl font-bold text-white">¥500</span>
+                            <span class="text-gray-400 mb-1">/月</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">いつでもキャンセル可能</p>
+                    </div>
+                    
+                    <!-- アップグレードボタン -->
+                    <button onclick="startCheckout()" 
+                            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        今すぐアップグレード ✨
+                    </button>
+                    
+                    <p class="text-xs text-center text-gray-500">
+                        ※ 決済は安全なStripeを使用します
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Firebase SDK -->
@@ -345,6 +409,8 @@
         let memories = [];
         let allTags = new Set();
         let activeTagFilters = new Set();
+        let isPremium = false; // プレミアムステータス
+        const FREE_LIMIT = 50; // 無料版の制限
         let searchFilters = {
             text: '',
             dateFrom: '',
@@ -365,6 +431,9 @@
                 document.getElementById('uploadSection').style.display = 'block';
                 showStatus('authStatus', `ログイン中: ${user.email}`, false);
                 
+                // プレミアムステータスをチェック
+                checkPremiumStatus(user.uid);
+                
                 if (memoryId) {
                     // 特定の記憶を表示
                     loadSingleMemory(memoryId);
@@ -380,6 +449,52 @@
                 }
             }
         });
+        
+        // プレミアムステータスをチェック
+        async function checkPremiumStatus(uid) {
+            try {
+                const userDoc = await db.collection('users').doc(uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    isPremium = userData.isPremium || false;
+                    
+                    // プレミアムステータスを表示
+                    updatePremiumUI();
+                } else {
+                    // 初回ユーザーの場合、ドキュメントを作成
+                    await db.collection('users').doc(uid).set({
+                        isPremium: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    isPremium = false;
+                    updatePremiumUI();
+                }
+            } catch (error) {
+                console.error('プレミアムステータスのチェックエラー:', error);
+                isPremium = false;
+                updatePremiumUI();
+            }
+        }
+        
+        // プレミアムUIを更新
+        function updatePremiumUI() {
+            const statusBadge = document.getElementById('premiumStatus');
+            if (statusBadge) {
+                if (isPremium) {
+                    statusBadge.innerHTML = '👑 プレミアム会員';
+                    statusBadge.className = 'px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full text-sm font-bold';
+                } else {
+                    const memoryCount = memories.length;
+                    statusBadge.innerHTML = `無料版 (${memoryCount}/${FREE_LIMIT}件)`;
+                    statusBadge.className = 'px-4 py-2 bg-gray-600 rounded-full text-sm';
+                    
+                    // 制限に近づいている場合は警告
+                    if (memoryCount >= FREE_LIMIT * 0.8) {
+                        statusBadge.className += ' bg-orange-600';
+                    }
+                }
+            }
+        }
         
         // ログイン
         async function login() {
@@ -473,6 +588,13 @@
             
             if (!currentUser) {
                 showStatus('status', 'ログインしてください', true);
+                return;
+            }
+            
+            // 無料版の制限チェック
+            if (!isPremium && memories.length >= FREE_LIMIT) {
+                showStatus('status', `無料版の制限（${FREE_LIMIT}件）に達しました`, true);
+                showUpgradeModal();
                 return;
             }
             
@@ -688,6 +810,13 @@
             }
             
             displayMemories();
+            updatePremiumUI();
+            
+            // 無料版で制限に近い場合はアップグレードボタンを表示
+            if (!isPremium && memories.length >= FREE_LIMIT * 0.8) {
+                const upgradeBtn = document.getElementById('upgradeButton');
+                if (upgradeBtn) upgradeBtn.classList.remove('hidden');
+            }
         }
         
         // 単一の記憶を読み込み
@@ -1148,6 +1277,28 @@
         function closeShareModal() {
             document.getElementById('shareModal').classList.add('hidden');
             document.getElementById('shareModal').classList.remove('flex');
+        }
+        
+        // アップグレードモーダルを表示
+        function showUpgradeModal() {
+            document.getElementById('upgradeModal').classList.remove('hidden');
+            document.getElementById('upgradeModal').classList.add('flex');
+        }
+        
+        // アップグレードモーダルを閉じる
+        function closeUpgradeModal() {
+            document.getElementById('upgradeModal').classList.add('hidden');
+            document.getElementById('upgradeModal').classList.remove('flex');
+        }
+        
+        // 決済処理を開始（Stripe連携が必要）
+        function startCheckout() {
+            alert('決済機能は現在準備中です。\n\nStripe連携が必要です。\n月額500円のサブスクリプションになります。');
+            // TODO: Stripe Checkoutセッションを作成
+            // 実装には以下が必要：
+            // 1. Stripeアカウント
+            // 2. サーバーサイドAPI（Firebase Functions推奨）
+            // 3. Stripe価格ID
         }
         
         // 共有リンクをコピー
