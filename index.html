@@ -1316,7 +1316,7 @@
                 // 注意：この関数はFirebase Functionsで実装する必要があります
                 const createCheckoutSession = functions.httpsCallable('createCheckoutSession');
                 const { data } = await createCheckoutSession({
-                    priceId: 'price_XXXXXX', // TODO: Stripeダッシュボードで作成した価格IDに置き換える
+                    priceId: 'price_1Rtt4MRritviSYbGuwIDp1WW', // Memory Fragments プレミアム月額500円
                     successUrl: window.location.origin + '?success=true',
                     cancelUrl: window.location.origin + '?canceled=true',
                 });
