@@ -382,11 +382,15 @@
         </div>
     </div>
     
+    <!-- Stripe SDK -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-functions-compat.js"></script>
     
     <script>
         // Firebase設定
@@ -404,6 +408,10 @@
         const auth = firebase.auth();
         const storage = firebase.storage();
         const db = firebase.firestore();
+        const functions = firebase.functions();
+        
+        // Initialize Stripe
+        const stripe = Stripe('pk_test_51RltmW2L9dU9afFcgj3IibP3Jm6bg23agDjacAWw6uF5O4X9YwAViLUIYDHYKCIJ7t0OvDJhVrKIrZek68O8YZQ100VvOyZoue');
         
         let currentUser = null;
         let memories = [];
@@ -1291,14 +1299,74 @@
             document.getElementById('upgradeModal').classList.remove('flex');
         }
         
-        // 決済処理を開始（Stripe連携が必要）
-        function startCheckout() {
-            alert('決済機能は現在準備中です。\n\nStripe連携が必要です。\n月額500円のサブスクリプションになります。');
-            // TODO: Stripe Checkoutセッションを作成
-            // 実装には以下が必要：
-            // 1. Stripeアカウント
-            // 2. サーバーサイドAPI（Firebase Functions推奨）
-            // 3. Stripe価格ID
+        // 決済処理を開始
+        async function startCheckout() {
+            if (!currentUser) {
+                alert('ログインしてください');
+                return;
+            }
+            
+            try {
+                // ローディング表示
+                const checkoutBtn = event.target;
+                checkoutBtn.disabled = true;
+                checkoutBtn.textContent = '処理中...';
+                
+                // Firebase Functionsを呼び出してCheckoutセッションを作成
+                // 注意：この関数はFirebase Functionsで実装する必要があります
+                const createCheckoutSession = functions.httpsCallable('createCheckoutSession');
+                const { data } = await createCheckoutSession({
+                    priceId: 'price_XXXXXX', // TODO: Stripeダッシュボードで作成した価格IDに置き換える
+                    successUrl: window.location.origin + '?success=true',
+                    cancelUrl: window.location.origin + '?canceled=true',
+                });
+                
+                // Stripe Checkoutにリダイレクト
+                const result = await stripe.redirectToCheckout({
+                    sessionId: data.sessionId
+                });
+                
+                if (result.error) {
+                    alert('エラーが発生しました: ' + result.error.message);
+                }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('現在、決済機能の設定中です。\n\n必要な手順：\n1. Stripeダッシュボードで月額500円の商品を作成\n2. Firebase Functionsをデプロイ\n3. 価格IDを設定\n\n詳細は開発者にお問い合わせください。');
+            } finally {
+                // ボタンを元に戻す
+                const checkoutBtn = event.target;
+                if (checkoutBtn) {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.textContent = '今すぐアップグレード ✨';
+                }
+            }
+        }
+        
+        // URLパラメータをチェックして決済結果を処理
+        function checkPaymentResult() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('success') === 'true') {
+                // 決済成功
+                alert('🎉 プレミアムプランへのアップグレードが完了しました！');
+                // プレミアムステータスを更新
+                if (currentUser) {
+                    db.collection('users').doc(currentUser.uid).update({
+                        isPremium: true,
+                        premiumStartDate: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        isPremium = true;
+                        updatePremiumUI();
+                    });
+                }
+                // URLパラメータをクリア
+                window.history.replaceState({}, '', window.location.pathname);
+            } else if (urlParams.get('canceled') === 'true') {
+                // 決済キャンセル
+                alert('決済がキャンセルされました。');
+                // URLパラメータをクリア
+                window.history.replaceState({}, '', window.location.pathname);
+            }
         }
         
         // 共有リンクをコピー
@@ -1666,6 +1734,9 @@
         window.onload = () => {
             generateStars();
             init3DScene();
+            
+            // 決済結果をチェック
+            checkPaymentResult();
             
             // URLパラメータを最初にチェック
             const urlParams = new URLSearchParams(window.location.search);
