@@ -928,7 +928,7 @@
             const grid = document.getElementById('memoriesGrid');
             grid.innerHTML = `
                 <div class="max-w-2xl mx-auto">
-                    <button onclick="returnToAllMemories()" 
+                    <button onclick="goBackToHome()" 
                             class="mb-6 px-4 py-2 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
                         ← すべての記憶に戻る
                     </button>
@@ -988,12 +988,24 @@
             grid.innerHTML = `
                 <div class="text-center py-20">
                     <p class="text-2xl text-gray-400 mb-4">記憶が見つかりませんでした</p>
-                    <button onclick="returnToAllMemories()" 
+                    <button onclick="goBackToHome()" 
                             class="px-6 py-3 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
                         トップページに戻る
                     </button>
                 </div>
             `;
+        }
+        
+        // ホームに戻る（モバイル対応版）
+        function goBackToHome() {
+            // スタイルをリセット
+            const style = document.querySelector('style');
+            if (style && style.textContent.includes('#authSection, #uploadSection')) {
+                style.remove();
+            }
+            
+            // URLパラメータを削除してページを再読み込み（より確実な方法）
+            window.location.href = window.location.pathname;
         }
         
         // すべての記憶に戻る
@@ -1003,8 +1015,12 @@
             
             // 要素を再表示
             if (currentUser) {
+                // ログイン済みの場合
                 const uploadSection = document.getElementById('uploadSection');
-                if (uploadSection) uploadSection.style.display = 'block';
+                if (uploadSection) {
+                    uploadSection.style.display = 'block';
+                    uploadSection.style.visibility = 'visible';
+                }
                 
                 const searchSection = document.getElementById('searchSection');
                 if (searchSection) searchSection.style.display = 'block';
@@ -1015,13 +1031,23 @@
                 // 記憶を再表示
                 displayMemories();
             } else {
-                // 未ログインの場合はログイン画面を表示
+                // 未ログインの場合
                 const authSection = document.getElementById('authSection');
-                if (authSection) authSection.style.display = 'block';
+                if (authSection) {
+                    authSection.style.display = 'block';
+                    authSection.style.visibility = 'visible';
+                }
                 
-                // 空の記憶グリッドを表示
-                const grid = document.getElementById('memoriesGrid');
-                grid.innerHTML = '';
+                // ローカルストレージから記憶を表示
+                const localMemories = localStorage.getItem('memories');
+                if (localMemories) {
+                    memories = JSON.parse(localMemories);
+                    displayMemories();
+                } else {
+                    // 記憶がない場合は空のグリッドを表示
+                    const grid = document.getElementById('memoriesGrid');
+                    grid.innerHTML = '';
+                }
             }
         }
 
