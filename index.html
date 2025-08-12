@@ -19,11 +19,6 @@
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <!-- jsPDF for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- jsPDF AutoTable for better table formatting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -537,10 +532,10 @@
                         記憶データを各種形式でダウンロードできます
                     </p>
                     
-                    <!-- PDF形式 -->
-                    <button onclick="exportToPDF()" 
+                    <!-- HTML形式 -->
+                    <button onclick="exportToHTML()" 
                             class="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 rounded-lg font-bold hover:from-red-700 hover:to-orange-700 transition-all flex items-center justify-center gap-3">
-                        📄 PDF形式でダウンロード
+                        🌐 HTML形式でダウンロード（印刷可能）
                     </button>
                     
                     <!-- CSV形式 -->
@@ -563,7 +558,7 @@
                 </div>
                 
                 <div class="mt-6 text-xs text-gray-400 text-center">
-                    ※ 画像は含まれません（PDFを除く）
+                    ※ 画像は含まれません
                 </div>
             </div>
         </div>
@@ -2141,87 +2136,8 @@
             }
         }
 
-        // PDF形式でエクスポート
-        function exportToPDF() {
-            try {
-                const { jsPDF } = window.jspdf;
-                
-                // 日本語フォントの設定
-                const doc = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-                
-                // 日本語フォントを追加（Google Noto Sans CJK JP）
-                doc.addFont('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@4.5.12/files/noto-sans-jp-japanese-400-normal.woff', 'NotoSansJP', 'normal');
-                doc.setFont('NotoSansJP');
-                
-                // タイトル
-                doc.setFontSize(20);
-                doc.text('Memory Fragments', 105, 20, { align: 'center' });
-                doc.setFontSize(12);
-                doc.text(`Export Date: ${new Date().toLocaleDateString('ja-JP')}`, 105, 30, { align: 'center' });
-                
-                // AutoTableを使用してテーブル形式で出力
-                const tableData = memories.map((memory, index) => {
-                    const date = memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : 'N/A';
-                    const tags = (memory.tags || []).join(', ') || 'N/A';
-                    return [
-                        (index + 1).toString(),
-                        memory.title || 'Untitled',
-                        memory.content || 'No content',
-                        memory.category || 'Other',
-                        tags,
-                        date
-                    ];
-                });
-                
-                // テーブルを作成
-                doc.autoTable({
-                    head: [['#', 'Title', 'Content', 'Category', 'Tags', 'Date']],
-                    body: tableData,
-                    startY: 40,
-                    styles: {
-                        font: 'helvetica', // AutoTableは日本語フォントに対応していないため、英語のみ使用
-                        fontSize: 10,
-                        cellPadding: 3,
-                        overflow: 'linebreak',
-                        cellWidth: 'wrap'
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 10 },
-                        1: { cellWidth: 35 },
-                        2: { cellWidth: 70 },
-                        3: { cellWidth: 25 },
-                        4: { cellWidth: 30 },
-                        5: { cellWidth: 25 }
-                    },
-                    headStyles: {
-                        fillColor: [147, 51, 234],
-                        textColor: 255,
-                        fontSize: 11,
-                        fontStyle: 'bold'
-                    },
-                    alternateRowStyles: {
-                        fillColor: [245, 245, 250]
-                    },
-                    margin: { top: 40 }
-                });
-                
-                // PDFをダウンロード
-                doc.save(`memory-fragments-${new Date().toISOString().split('T')[0]}.pdf`);
-                showStatus('status', '✅ PDFをダウンロードしました', false);
-                closeExportModal();
-            } catch (error) {
-                console.error('PDF export error:', error);
-                // 代替方法：HTMLテーブルとして出力
-                exportToPDFAlternative();
-            }
-        }
-        
-        // PDF代替エクスポート（HTMLテーブル形式）
-        function exportToPDFAlternative() {
+        // HTML形式でエクスポート
+        function exportToHTML() {
             // HTMLコンテンツを作成
             let htmlContent = `
                 <!DOCTYPE html>
@@ -2271,7 +2187,7 @@
             link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.html`;
             link.click();
             
-            showStatus('status', '✅ HTML形式でダウンロードしました（PDFの代替）', false);
+            showStatus('status', '✅ HTML形式でダウンロードしました', false);
             closeExportModal();
         }
 
