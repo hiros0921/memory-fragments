@@ -19,6 +19,9 @@
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -369,6 +372,10 @@
                                 class="flex-1 py-3 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transform hover:scale-105 transition-all duration-300 border border-white/20">
                             リセット
                         </button>
+                        <button onclick="showExportModal()"
+                                class="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-300">
+                            📤 エクスポート
+                        </button>
                     </div>
                 </div>
             </div>
@@ -510,6 +517,51 @@
                             💾 保存して適用
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- エクスポートモーダル -->
+        <div id="exportModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div class="max-w-md w-full mx-4 bg-gradient-to-br from-gray-900 via-green-900 to-emerald-900 rounded-2xl p-8 shadow-2xl border border-white/20">
+                <button onclick="closeExportModal()" 
+                        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-2xl">&times;</button>
+                <h2 class="text-3xl font-bold mb-6 text-center">
+                    <span class="gradient-text">📤 データエクスポート</span>
+                </h2>
+                
+                <div class="space-y-4">
+                    <p class="text-gray-300 text-center mb-6">
+                        記憶データを各種形式でダウンロードできます
+                    </p>
+                    
+                    <!-- PDF形式 -->
+                    <button onclick="exportToPDF()" 
+                            class="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 rounded-lg font-bold hover:from-red-700 hover:to-orange-700 transition-all flex items-center justify-center gap-3">
+                        📄 PDF形式でダウンロード
+                    </button>
+                    
+                    <!-- CSV形式 -->
+                    <button onclick="exportToCSV()" 
+                            class="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-bold hover:from-blue-700 hover:to-cyan-700 transition-all flex items-center justify-center gap-3">
+                        📊 CSV形式でダウンロード
+                    </button>
+                    
+                    <!-- JSON形式 -->
+                    <button onclick="exportToJSON()" 
+                            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center gap-3">
+                        🗂️ JSON形式でダウンロード
+                    </button>
+                    
+                    <!-- テキスト形式 -->
+                    <button onclick="exportToText()" 
+                            class="w-full py-4 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg font-bold hover:from-gray-700 hover:to-gray-800 transition-all flex items-center justify-center gap-3">
+                        📝 テキスト形式でダウンロード
+                    </button>
+                </div>
+                
+                <div class="mt-6 text-xs text-gray-400 text-center">
+                    ※ 画像は含まれません（PDFを除く）
                 </div>
             </div>
         </div>
@@ -2067,6 +2119,185 @@
             applyCustomSettings();
             updateCustomizeModalUI();
             showStatus('status', '✅ カスタマイズをリセットしました', false);
+        }
+
+        // エクスポートモーダルを表示
+        function showExportModal() {
+            const modal = document.getElementById('exportModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        // エクスポートモーダルを閉じる
+        function closeExportModal() {
+            const modal = document.getElementById('exportModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // PDF形式でエクスポート
+        function exportToPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // タイトル
+                doc.setFontSize(20);
+                doc.text('Memory Fragments', 105, 20, { align: 'center' });
+                doc.setFontSize(12);
+                doc.text(`Export Date: ${new Date().toLocaleDateString('ja-JP')}`, 105, 30, { align: 'center' });
+                
+                let yPosition = 50;
+                const lineHeight = 10;
+                const pageHeight = 280;
+                
+                memories.forEach((memory, index) => {
+                    if (yPosition > pageHeight) {
+                        doc.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    // 記憶タイトル
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${index + 1}. ${memory.title || '無題'}`, 10, yPosition);
+                    yPosition += lineHeight;
+                    
+                    // 日付とカテゴリー
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    const date = memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : '';
+                    doc.text(`Date: ${date} | Category: ${memory.category || 'その他'}`, 10, yPosition);
+                    yPosition += lineHeight;
+                    
+                    // 内容（長い場合は分割）
+                    if (memory.content) {
+                        const lines = doc.splitTextToSize(memory.content, 180);
+                        lines.forEach(line => {
+                            if (yPosition > pageHeight) {
+                                doc.addPage();
+                                yPosition = 20;
+                            }
+                            doc.text(line, 10, yPosition);
+                            yPosition += 7;
+                        });
+                    }
+                    
+                    // タグ
+                    if (memory.tags && memory.tags.length > 0) {
+                        doc.text(`Tags: ${memory.tags.join(', ')}`, 10, yPosition);
+                        yPosition += lineHeight;
+                    }
+                    
+                    yPosition += 10; // 記憶間のスペース
+                });
+                
+                // PDFをダウンロード
+                doc.save(`memory-fragments-${new Date().toISOString().split('T')[0]}.pdf`);
+                showStatus('status', '✅ PDFをダウンロードしました', false);
+                closeExportModal();
+            } catch (error) {
+                console.error('PDF export error:', error);
+                alert('PDFのエクスポートに失敗しました');
+            }
+        }
+
+        // CSV形式でエクスポート
+        function exportToCSV() {
+            const headers = ['タイトル', '内容', 'カテゴリー', 'タグ', '日付'];
+            const rows = memories.map(memory => [
+                memory.title || '',
+                memory.content || '',
+                memory.category || '',
+                (memory.tags || []).join(';'),
+                memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : ''
+            ]);
+            
+            // BOMを追加（Excelで文字化けを防ぐ）
+            const BOM = '\uFEFF';
+            let csvContent = BOM + headers.join(',') + '\n';
+            
+            rows.forEach(row => {
+                const escapedRow = row.map(field => {
+                    // カンマや改行を含む場合はダブルクォートで囲む
+                    if (field.includes(',') || field.includes('\n') || field.includes('"')) {
+                        return `"${field.replace(/"/g, '""')}"`;
+                    }
+                    return field;
+                });
+                csvContent += escapedRow.join(',') + '\n';
+            });
+            
+            // ダウンロード
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+            showStatus('status', '✅ CSVをダウンロードしました', false);
+            closeExportModal();
+        }
+
+        // JSON形式でエクスポート
+        function exportToJSON() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                totalMemories: memories.length,
+                memories: memories.map(memory => ({
+                    title: memory.title,
+                    content: memory.content,
+                    category: memory.category,
+                    tags: memory.tags,
+                    createdAt: memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toISOString() : null,
+                    imageUrl: memory.imageUrl
+                }))
+            };
+            
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showStatus('status', '✅ JSONをダウンロードしました', false);
+            closeExportModal();
+        }
+
+        // テキスト形式でエクスポート
+        function exportToText() {
+            let textContent = 'Memory Fragments Export\n';
+            textContent += '=' .repeat(50) + '\n';
+            textContent += `Export Date: ${new Date().toLocaleDateString('ja-JP')}\n`;
+            textContent += `Total Memories: ${memories.length}\n`;
+            textContent += '=' .repeat(50) + '\n\n';
+            
+            memories.forEach((memory, index) => {
+                textContent += `【${index + 1}】 ${memory.title || '無題'}\n`;
+                textContent += '-'.repeat(30) + '\n';
+                textContent += `日付: ${memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : '不明'}\n`;
+                textContent += `カテゴリー: ${memory.category || 'その他'}\n`;
+                if (memory.tags && memory.tags.length > 0) {
+                    textContent += `タグ: ${memory.tags.join(', ')}\n`;
+                }
+                textContent += '\n内容:\n';
+                textContent += memory.content || '(内容なし)';
+                textContent += '\n\n' + '='.repeat(50) + '\n\n';
+            });
+            
+            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.txt`;
+            link.click();
+            
+            showStatus('status', '✅ テキストファイルをダウンロードしました', false);
+            closeExportModal();
         }
 
         // 初期読み込み
