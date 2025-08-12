@@ -214,16 +214,20 @@
             </h1>
             <p class="text-xl text-gray-300">あなたの大切な思い出を永遠に</p>
             
-            <!-- プレミアムステータス表示 -->
-            <div class="mt-6 flex justify-center items-center gap-4">
-                <span id="premiumStatus" class="px-4 py-2 bg-gray-600 rounded-full text-sm"></span>
-                <button id="upgradeButton" onclick="showUpgradeModal()" 
-                        class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all hidden">
-                    ✨ プレミアムにアップグレード
-                </button>
+            <!-- カスタマイズボタン（常に表示） -->
+            <div class="mt-4">
                 <button onclick="showCustomizeModal()" 
                         class="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full text-sm font-bold hover:from-blue-700 hover:to-cyan-700 transition-all">
                     🎨 カスタマイズ
+                </button>
+            </div>
+            
+            <!-- プレミアムステータス表示 -->
+            <div class="mt-4 flex justify-center items-center gap-4">
+                <span id="premiumStatus" class="px-4 py-2 bg-gray-600 rounded-full text-sm hidden"></span>
+                <button id="upgradeButton" onclick="showUpgradeModal()" 
+                        class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all hidden">
+                    ✨ プレミアムにアップグレード
                 </button>
             </div>
         </div>
@@ -672,6 +676,7 @@
         function updatePremiumUI() {
             const statusBadge = document.getElementById('premiumStatus');
             if (statusBadge) {
+                statusBadge.classList.remove('hidden'); // hiddenクラスを削除して表示
                 if (isPremium) {
                     statusBadge.innerHTML = '👑 プレミアム会員';
                     statusBadge.className = 'px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full text-sm font-bold';
