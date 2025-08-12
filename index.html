@@ -21,6 +21,8 @@
     
     <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF AutoTable for better table formatting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2143,7 +2145,17 @@
         function exportToPDF() {
             try {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+                
+                // 日本語フォントの設定
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // 日本語フォントを追加（Google Noto Sans CJK JP）
+                doc.addFont('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@4.5.12/files/noto-sans-jp-japanese-400-normal.woff', 'NotoSansJP', 'normal');
+                doc.setFont('NotoSansJP');
                 
                 // タイトル
                 doc.setFontSize(20);
@@ -2151,49 +2163,50 @@
                 doc.setFontSize(12);
                 doc.text(`Export Date: ${new Date().toLocaleDateString('ja-JP')}`, 105, 30, { align: 'center' });
                 
-                let yPosition = 50;
-                const lineHeight = 10;
-                const pageHeight = 280;
+                // AutoTableを使用してテーブル形式で出力
+                const tableData = memories.map((memory, index) => {
+                    const date = memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : 'N/A';
+                    const tags = (memory.tags || []).join(', ') || 'N/A';
+                    return [
+                        (index + 1).toString(),
+                        memory.title || 'Untitled',
+                        memory.content || 'No content',
+                        memory.category || 'Other',
+                        tags,
+                        date
+                    ];
+                });
                 
-                memories.forEach((memory, index) => {
-                    if (yPosition > pageHeight) {
-                        doc.addPage();
-                        yPosition = 20;
-                    }
-                    
-                    // 記憶タイトル
-                    doc.setFontSize(14);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`${index + 1}. ${memory.title || '無題'}`, 10, yPosition);
-                    yPosition += lineHeight;
-                    
-                    // 日付とカテゴリー
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'normal');
-                    const date = memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : '';
-                    doc.text(`Date: ${date} | Category: ${memory.category || 'その他'}`, 10, yPosition);
-                    yPosition += lineHeight;
-                    
-                    // 内容（長い場合は分割）
-                    if (memory.content) {
-                        const lines = doc.splitTextToSize(memory.content, 180);
-                        lines.forEach(line => {
-                            if (yPosition > pageHeight) {
-                                doc.addPage();
-                                yPosition = 20;
-                            }
-                            doc.text(line, 10, yPosition);
-                            yPosition += 7;
-                        });
-                    }
-                    
-                    // タグ
-                    if (memory.tags && memory.tags.length > 0) {
-                        doc.text(`Tags: ${memory.tags.join(', ')}`, 10, yPosition);
-                        yPosition += lineHeight;
-                    }
-                    
-                    yPosition += 10; // 記憶間のスペース
+                // テーブルを作成
+                doc.autoTable({
+                    head: [['#', 'Title', 'Content', 'Category', 'Tags', 'Date']],
+                    body: tableData,
+                    startY: 40,
+                    styles: {
+                        font: 'helvetica', // AutoTableは日本語フォントに対応していないため、英語のみ使用
+                        fontSize: 10,
+                        cellPadding: 3,
+                        overflow: 'linebreak',
+                        cellWidth: 'wrap'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10 },
+                        1: { cellWidth: 35 },
+                        2: { cellWidth: 70 },
+                        3: { cellWidth: 25 },
+                        4: { cellWidth: 30 },
+                        5: { cellWidth: 25 }
+                    },
+                    headStyles: {
+                        fillColor: [147, 51, 234],
+                        textColor: 255,
+                        fontSize: 11,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [245, 245, 250]
+                    },
+                    margin: { top: 40 }
                 });
                 
                 // PDFをダウンロード
@@ -2202,8 +2215,64 @@
                 closeExportModal();
             } catch (error) {
                 console.error('PDF export error:', error);
-                alert('PDFのエクスポートに失敗しました');
+                // 代替方法：HTMLテーブルとして出力
+                exportToPDFAlternative();
             }
+        }
+        
+        // PDF代替エクスポート（HTMLテーブル形式）
+        function exportToPDFAlternative() {
+            // HTMLコンテンツを作成
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html lang="ja">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Memory Fragments Export</title>
+                    <style>
+                        body { font-family: 'Noto Sans JP', sans-serif; padding: 20px; }
+                        h1 { color: #9333ea; text-align: center; }
+                        .date { text-align: center; color: #666; margin-bottom: 30px; }
+                        .memory { margin-bottom: 30px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; }
+                        .memory-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 10px; }
+                        .memory-meta { color: #6b7280; font-size: 14px; margin-bottom: 10px; }
+                        .memory-content { color: #374151; line-height: 1.6; }
+                        .memory-tags { color: #9333ea; font-size: 14px; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Memory Fragments</h1>
+                    <div class="date">Export Date: ${new Date().toLocaleDateString('ja-JP')}</div>
+            `;
+            
+            memories.forEach((memory, index) => {
+                const date = memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : '日付不明';
+                const tags = memory.tags && memory.tags.length > 0 ? memory.tags.join(', ') : '';
+                
+                htmlContent += `
+                    <div class="memory">
+                        <div class="memory-title">${index + 1}. ${memory.title || '無題'}</div>
+                        <div class="memory-meta">日付: ${date} | カテゴリー: ${memory.category || 'その他'}</div>
+                        <div class="memory-content">${(memory.content || '内容なし').replace(/\n/g, '<br>')}</div>
+                        ${tags ? `<div class="memory-tags">タグ: ${tags}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            htmlContent += `
+                </body>
+                </html>
+            `;
+            
+            // HTMLファイルとしてダウンロード
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.html`;
+            link.click();
+            
+            showStatus('status', '✅ HTML形式でダウンロードしました（PDFの代替）', false);
+            closeExportModal();
         }
 
         // CSV形式でエクスポート
