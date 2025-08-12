@@ -121,6 +121,81 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(168, 85, 247, 0.7);
         }
+        
+        /* テーマカラー */
+        :root {
+            --animation-speed: 1;
+        }
+        
+        /* パープルテーマ（デフォルト） */
+        .theme-purple {
+            --primary-gradient: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%);
+            --accent-color: #a855f7;
+            --accent-hover: #9333ea;
+        }
+        
+        /* ブルーテーマ */
+        .theme-blue {
+            --primary-gradient: linear-gradient(135deg, #0a1929 0%, #0f2847 25%, #1e3a5f 50%, #0f2847 75%, #0a1929 100%);
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+        
+        /* グリーンテーマ */
+        .theme-green {
+            --primary-gradient: linear-gradient(135deg, #0a1f0a 0%, #0b2e1a 25%, #1b6938 50%, #0b2e1a 75%, #0a1f0a 100%);
+            --accent-color: #10b981;
+            --accent-hover: #059669;
+        }
+        
+        /* レッドテーマ */
+        .theme-red {
+            --primary-gradient: linear-gradient(135deg, #1f0a0a 0%, #2e0b0b 25%, #691b1b 50%, #2e0b0b 75%, #1f0a0a 100%);
+            --accent-color: #ef4444;
+            --accent-hover: #dc2626;
+        }
+        
+        /* ダークテーマ */
+        .theme-dark {
+            --primary-gradient: linear-gradient(135deg, #000000 0%, #1a1a1a 25%, #2d2d2d 50%, #1a1a1a 75%, #000000 100%);
+            --accent-color: #6b7280;
+            --accent-hover: #4b5563;
+        }
+        
+        /* ゴールドテーマ */
+        .theme-gold {
+            --primary-gradient: linear-gradient(135deg, #1f1a0a 0%, #2e250b 25%, #695a1b 50%, #2e250b 75%, #1f1a0a 100%);
+            --accent-color: #f59e0b;
+            --accent-hover: #d97706;
+        }
+        
+        /* ピンクテーマ */
+        .theme-pink {
+            --primary-gradient: linear-gradient(135deg, #1f0a1a 0%, #2e0b25 25%, #691b5a 50%, #2e0b25 75%, #1f0a1a 100%);
+            --accent-color: #ec4899;
+            --accent-hover: #db2777;
+        }
+        
+        /* ティールテーマ */
+        .theme-teal {
+            --primary-gradient: linear-gradient(135deg, #0a1f1f 0%, #0b2e2e 25%, #1b6969 50%, #0b2e2e 75%, #0a1f1f 100%);
+            --accent-color: #14b8a6;
+            --accent-hover: #0d9488;
+        }
+        
+        /* テーマカラーを適用 */
+        #three-canvas {
+            background: var(--primary-gradient);
+        }
+        
+        /* アニメーション速度の適用 */
+        .animate-float {
+            animation-duration: calc(6s / var(--animation-speed));
+        }
+        
+        .star {
+            animation: twinkle calc(3s / var(--animation-speed)) ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="min-h-screen text-white font-sans overflow-x-hidden">
@@ -145,6 +220,10 @@
                 <button id="upgradeButton" onclick="showUpgradeModal()" 
                         class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-sm font-bold hover:from-purple-700 hover:to-pink-700 transition-all hidden">
                     ✨ プレミアムにアップグレード
+                </button>
+                <button onclick="showCustomizeModal()" 
+                        class="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full text-sm font-bold hover:from-blue-700 hover:to-cyan-700 transition-all">
+                    🎨 カスタマイズ
                 </button>
             </div>
         </div>
@@ -323,6 +402,111 @@
                         class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-2xl">&times;</button>
                 <h2 class="text-2xl font-bold mb-6 text-purple-300">🔗 記憶を共有</h2>
                 <div id="shareContent"></div>
+            </div>
+        </div>
+        
+        <!-- カスタマイズモーダル -->
+        <div id="customizeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div class="max-w-2xl w-full mx-4 bg-gradient-to-br from-gray-900 via-blue-900 to-cyan-900 rounded-2xl p-8 shadow-2xl border border-white/20">
+                <button onclick="closeCustomizeModal()" 
+                        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-2xl">&times;</button>
+                <h2 class="text-3xl font-bold mb-6 text-center">
+                    <span class="gradient-text">🎨 カスタマイズ設定</span>
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- テーマカラー選択 -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 text-cyan-300">テーマカラー</h3>
+                        <div class="grid grid-cols-4 gap-3">
+                            <button onclick="changeTheme('purple')" class="theme-btn bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">パープル</span>
+                            </button>
+                            <button onclick="changeTheme('blue')" class="theme-btn bg-gradient-to-r from-blue-600 to-cyan-600 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">ブルー</span>
+                            </button>
+                            <button onclick="changeTheme('green')" class="theme-btn bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">グリーン</span>
+                            </button>
+                            <button onclick="changeTheme('red')" class="theme-btn bg-gradient-to-r from-red-600 to-orange-600 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">レッド</span>
+                            </button>
+                            <button onclick="changeTheme('dark')" class="theme-btn bg-gradient-to-r from-gray-800 to-gray-900 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">ダーク</span>
+                            </button>
+                            <button onclick="changeTheme('gold')" class="theme-btn bg-gradient-to-r from-yellow-600 to-amber-600 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">ゴールド</span>
+                            </button>
+                            <button onclick="changeTheme('pink')" class="theme-btn bg-gradient-to-r from-pink-500 to-rose-500 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">ピンク</span>
+                            </button>
+                            <button onclick="changeTheme('teal')" class="theme-btn bg-gradient-to-r from-teal-600 to-cyan-600 p-4 rounded-xl hover:scale-105 transition-transform">
+                                <span class="text-white font-bold">ティール</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- フォントサイズ -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 text-cyan-300">文字サイズ</h3>
+                        <div class="flex items-center gap-4">
+                            <button onclick="changeFontSize('small')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                                <span class="text-sm">小</span>
+                            </button>
+                            <button onclick="changeFontSize('medium')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                                <span class="text-base">中</span>
+                            </button>
+                            <button onclick="changeFontSize('large')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                                <span class="text-lg">大</span>
+                            </button>
+                            <button onclick="changeFontSize('xlarge')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                                <span class="text-xl">特大</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 背景エフェクト -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 text-cyan-300">背景エフェクト</h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="toggleBackground('stars')" id="bgStars" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                                ⭐ 星空
+                            </button>
+                            <button onclick="toggleBackground('3d')" id="bg3D" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                                🌐 3D
+                            </button>
+                            <button onclick="toggleBackground('particles')" id="bgParticles" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                                ✨ パーティクル
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- アニメーション速度 -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 text-cyan-300">アニメーション速度</h3>
+                        <input type="range" id="animationSpeed" min="0" max="100" value="50" 
+                               class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                               onchange="changeAnimationSpeed(this.value)">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>オフ</span>
+                            <span>遅い</span>
+                            <span>通常</span>
+                            <span>速い</span>
+                        </div>
+                    </div>
+                    
+                    <!-- リセットボタン -->
+                    <div class="flex justify-between mt-6">
+                        <button onclick="resetCustomization()" 
+                                class="px-6 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                            🔄 初期設定に戻す
+                        </button>
+                        <button onclick="saveCustomization()" 
+                                class="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all font-bold">
+                            💾 保存して適用
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -1730,8 +1914,159 @@
             renderer.render(scene, camera);
         }
         
+        // カスタマイズ機能
+        let customSettings = {
+            theme: 'purple',
+            fontSize: 'medium',
+            bgStars: true,
+            bg3D: true,
+            bgParticles: false,
+            animationSpeed: 1
+        };
+
+        // カスタマイズ設定の読み込み
+        function loadCustomSettings() {
+            const saved = localStorage.getItem('customSettings');
+            if (saved) {
+                customSettings = JSON.parse(saved);
+                applyCustomSettings();
+            }
+        }
+
+        // カスタマイズ設定の適用
+        function applyCustomSettings() {
+            // テーマカラーの適用
+            document.documentElement.className = `theme-${customSettings.theme}`;
+            
+            // フォントサイズの適用
+            const fontSizes = {
+                small: '14px',
+                medium: '16px',
+                large: '18px',
+                xlarge: '20px'
+            };
+            document.body.style.fontSize = fontSizes[customSettings.fontSize];
+            
+            // 背景エフェクトの切り替え
+            const starsContainer = document.querySelector('.stars');
+            const bg3D = document.getElementById('bg-3d');
+            
+            if (starsContainer) {
+                starsContainer.style.display = customSettings.bgStars ? 'block' : 'none';
+            }
+            if (bg3D) {
+                bg3D.style.display = customSettings.bg3D ? 'block' : 'none';
+            }
+            
+            // アニメーション速度の適用
+            document.documentElement.style.setProperty('--animation-speed', customSettings.animationSpeed);
+        }
+
+        // カスタマイズモーダルを表示
+        function showCustomizeModal() {
+            const modal = document.getElementById('customizeModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                // 現在の設定を反映
+                updateCustomizeModalUI();
+            }
+        }
+        
+        function updateCustomizeModalUI() {
+            // 背景エフェクトボタンの状態を更新
+            const bgStarsBtn = document.getElementById('bgStars');
+            const bg3DBtn = document.getElementById('bg3D');
+            const bgParticlesBtn = document.getElementById('bgParticles');
+            
+            if (bgStarsBtn) {
+                bgStarsBtn.className = customSettings.bgStars ? 
+                    'px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors' :
+                    'px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors';
+            }
+            if (bg3DBtn) {
+                bg3DBtn.className = customSettings.bg3D ? 
+                    'px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors' :
+                    'px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors';
+            }
+            if (bgParticlesBtn) {
+                bgParticlesBtn.className = customSettings.bgParticles ? 
+                    'px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors' :
+                    'px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors';
+            }
+            
+            // アニメーション速度スライダーを更新
+            const speedSlider = document.getElementById('animationSpeed');
+            if (speedSlider) {
+                speedSlider.value = customSettings.animationSpeed * 50;
+            }
+        }
+
+        // カスタマイズモーダルを閉じる
+        function closeCustomizeModal() {
+            const modal = document.getElementById('customizeModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // テーマカラー変更
+        function changeTheme(theme) {
+            customSettings.theme = theme;
+            applyCustomSettings();
+        }
+
+        // フォントサイズ変更
+        function changeFontSize(size) {
+            customSettings.fontSize = size;
+            applyCustomSettings();
+        }
+
+        // 背景エフェクト切り替え
+        function toggleBackground(type) {
+            if (type === 'stars') {
+                customSettings.bgStars = !customSettings.bgStars;
+            } else if (type === '3d') {
+                customSettings.bg3D = !customSettings.bg3D;
+            } else if (type === 'particles') {
+                customSettings.bgParticles = !customSettings.bgParticles;
+            }
+            applyCustomSettings();
+            updateCustomizeModalUI();
+        }
+
+        // アニメーション速度変更
+        function changeAnimationSpeed(value) {
+            customSettings.animationSpeed = value / 50; // 0-100を0-2の範囲に変換
+            applyCustomSettings();
+        }
+
+        // カスタマイズ設定を保存
+        function saveCustomSettings() {
+            localStorage.setItem('customSettings', JSON.stringify(customSettings));
+            showStatus('status', '✅ カスタマイズ設定を保存しました', false);
+            closeCustomizeModal();
+        }
+
+        // カスタマイズをリセット
+        function resetCustomization() {
+            customSettings = {
+                theme: 'purple',
+                fontSize: 'medium',
+                bgStars: true,
+                bg3D: true,
+                bgParticles: false,
+                animationSpeed: 1
+            };
+            applyCustomSettings();
+            updateCustomizeModalUI();
+            showStatus('status', '✅ カスタマイズをリセットしました', false);
+        }
+
         // 初期読み込み
         window.onload = () => {
+            loadCustomSettings();
             generateStars();
             init3DScene();
             
