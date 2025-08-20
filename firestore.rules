@@ -12,7 +12,45 @@ service cloud.firestore {
       }
     }
     
-    // 開発中の一時的なルール（本番では削除すること）
+    // memoriesコレクションへの直接アクセス
+    match /memories/{memoryId} {
+      // 作成者のみ読み書き可能
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         resource.data.isPublic == true);
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+    }
+    
+    // remindersコレクション
+    match /reminders/{userId} {
+      // 自分のリマインダーのみアクセス可能
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // サブスクリプション情報
+    match /subscriptions/{userId} {
+      // 読み取りは本人のみ、書き込みはサーバーサイド（Cloud Functions）のみ
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Cloud Functions経由でのみ更新
+    }
+    
+    // 共有された記憶（将来の機能用）
+    match /sharedMemories/{shareId} {
+      allow read: if true; // 共有リンクを持っている人は誰でも読める
+      allow write: if false; // 書き込み不可
+    }
+    
+    // 統計情報（プレミアム機能用）
+    match /statistics/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // テストモードのルールは完全に削除（セキュリティ向上）
+    // 以下のルールは絶対に有効にしないこと！
     // match /{document=**} {
     //   allow read, write: if true;
     // }

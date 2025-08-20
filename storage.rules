@@ -1,17 +1,49 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // 画像フォルダへのアクセスルール
-    match /images/{userId}/{allPaths=**} {
-      // 読み取りは誰でも可能（公開アクセス）
-      allow read: if true;
-      // 書き込みは自分のフォルダのみ
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // memoriesフォルダへのアクセスルール
+    match /memories/{memoryId}/{allPaths=**} {
+      // 読み取りは認証されたユーザーのみ（セキュリティ向上）
+      allow read: if request.auth != null;
+      // 書き込みは認証されたユーザーのみ
+      allow write: if request.auth != null 
+        && request.resource.size < 10 * 1024 * 1024  // 10MB以下
+        && request.resource.contentType.matches('image/.*'); // 画像のみ
     }
     
-    // 全ての画像への読み取りアクセスを許可（CORSエラー対策）
-    match /{allPaths=**} {
+    // ユーザー別の画像フォルダ
+    match /images/{userId}/{allPaths=**} {
+      // 読み取りは認証されたユーザーなら誰でも可能（共有機能のため）
+      allow read: if request.auth != null;
+      // 書き込みは自分のフォルダのみ
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024  // 10MB以下
+        && request.resource.contentType.matches('image/.*'); // 画像のみ
+    }
+    
+    // プロフィール画像
+    match /profiles/{userId}/{fileName} {
+      // プロフィール画像は誰でも見れる
       allow read: if true;
+      // 本人のみアップロード可能
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024  // 5MB以下
+        && request.resource.contentType.matches('image/.*'); // 画像のみ
+    }
+    
+    // 共有された画像（公開リンク用）
+    match /shared/{shareId}/{allPaths=**} {
+      // 共有画像は誰でも見れる
+      allow read: if true;
+      // 書き込みは不可
+      allow write: if false;
+    }
+    
+    // デフォルトルール（その他のパスへのアクセスを拒否）
+    match /{allPaths=**} {
+      allow read: if false;
       allow write: if false;
     }
   }
