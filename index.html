@@ -57,6 +57,17 @@
     </script>
     
     <style>
+        /* ベース背景色 */
+        html {
+            background: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%) !important;
+            min-height: 100vh;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%) !important;
+            min-height: 100vh;
+        }
+        
         /* 宇宙背景の星 */
         .stars {
             position: fixed;
@@ -101,7 +112,7 @@
             width: 100%;
             height: 100%;
             z-index: 0;
-            background: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%);
+            background: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%) !important;
         }
         
         /* カスタムスクロールバー */
@@ -128,6 +139,12 @@
         }
         
         /* パープルテーマ（デフォルト） */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%);
+            --accent-color: #a855f7;
+            --accent-hover: #9333ea;
+        }
+        
         .theme-purple {
             --primary-gradient: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%);
             --accent-color: #a855f7;
@@ -198,7 +215,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen text-white font-sans overflow-x-hidden">
+<body class="min-h-screen text-white font-sans overflow-x-hidden" style="background: linear-gradient(135deg, #0a0a1f 0%, #1a0b2e 25%, #2d1b69 50%, #1a0b2e 75%, #0a0a1f 100%);">
     <!-- 3D背景 -->
     <canvas id="three-canvas"></canvas>
     
@@ -234,24 +251,24 @@
         
         <!-- 認証セクション -->
         <div class="max-w-md mx-auto mb-12" id="authSection">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20 glow-purple">
+            <div class="bg-purple-900/20 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-purple-400/30 glow-purple">
                 <h2 class="text-2xl font-bold text-center mb-6">
                     <span class="text-purple-300">ログイン</span>
                 </h2>
                 <div class="space-y-4">
                     <input type="email" id="loginEmail" 
                            placeholder="メールアドレス" 
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400">
+                           class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white placeholder-gray-400">
                     <input type="password" id="loginPassword" 
                            placeholder="パスワード"
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400">
+                           class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white placeholder-gray-400">
                     <div class="flex gap-3">
                         <button onclick="login()" 
                                 class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
                             ログイン
                         </button>
                         <button onclick="resetPassword()" 
-                                class="flex-1 py-3 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transform hover:scale-105 transition-all duration-300 border border-white/20">
+                                class="flex-1 py-3 bg-purple-800/20 rounded-lg font-semibold hover:bg-purple-700/30 transform hover:scale-105 transition-all duration-300 border border-purple-400/30">
                             パスワードリセット
                         </button>
                     </div>
@@ -262,7 +279,7 @@
         
         <!-- アップロードセクション -->
         <div class="max-w-2xl mx-auto mb-12" id="uploadSection" style="display: none;">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20 glow-purple">
+            <div class="bg-purple-900/20 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-purple-400/30 glow-purple">
                 <h2 class="text-3xl font-bold text-center mb-8">
                     <span class="text-purple-300">新しい記憶を記録</span>
                 </h2>
@@ -270,15 +287,15 @@
                 <div class="space-y-6">
                     <input type="text" id="title" 
                            placeholder="タイトル"
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400">
+                           class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white placeholder-gray-400">
                     
                     <textarea id="content" 
                               placeholder="思い出の詳細" 
                               rows="5"
-                              class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400 resize-none"></textarea>
+                              class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white placeholder-gray-400 resize-none"></textarea>
                     
                     <select id="category"
-                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                            class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white">
                         <option value="" class="bg-gray-800">カテゴリーを選択</option>
                         <option value="日常" class="bg-gray-800">日常</option>
                         <option value="旅行" class="bg-gray-800">旅行</option>
@@ -290,26 +307,26 @@
                     
                     <input type="text" id="tags" 
                            placeholder="タグを入力（スペースで区切る）例: 夏 海 家族旅行"
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400">
+                           class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white placeholder-gray-400">
                     <div id="tagPreview" class="flex flex-wrap gap-2"></div>
                     
                     <div class="relative">
                         <input type="file" id="imageFile" accept="image/*" class="hidden">
-                        <label for="imageFile" class="block w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:bg-white/20 transition-all duration-300 text-center">
+                        <label for="imageFile" class="block w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg cursor-pointer hover:bg-purple-800/30 transition-all duration-300 text-center">
                             📷 画像を選択
                         </label>
                         <div id="imageInfo" class="mt-2 text-xs text-gray-400 hidden"></div>
                     </div>
                     
                     <div class="flex items-center gap-3">
-                        <input type="checkbox" id="locationPermission" class="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-600 focus:ring-2">
+                        <input type="checkbox" id="locationPermission" class="w-5 h-5 rounded border-purple-400/30 bg-purple-900/20 text-purple-600 focus:ring-purple-600 focus:ring-2">
                         <label for="locationPermission" class="cursor-pointer">📍 現在地を記録する</label>
                         <span id="locationStatus" class="text-sm text-gray-400"></span>
                     </div>
                     
                     <div id="uploadProgress" class="hidden">
                         <p class="text-sm mb-2">アップロード中...</p>
-                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div class="w-full h-2 bg-purple-900/20 rounded-full overflow-hidden">
                             <div class="h-full bg-gradient-to-r from-purple-600 to-blue-600 rounded-full transition-all duration-300" id="progressFill" style="width: 0%"></div>
                         </div>
                     </div>
@@ -326,29 +343,29 @@
         
         <!-- 検索セクション -->
         <div id="searchSection" class="mb-8 hidden">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
+            <div class="bg-purple-900/20 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-purple-400/30">
                 <h3 class="text-xl font-bold mb-4 text-purple-300">🔍 検索・フィルター</h3>
                 
                 <div class="space-y-4">
                     <input type="text" id="searchText" 
                            placeholder="タイトルや内容で検索..."
-                           class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white placeholder-gray-400">
+                           class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white placeholder-gray-400">
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block mb-2 text-sm text-gray-300">開始日</label>
                             <input type="date" id="dateFrom"
-                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                                   class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white">
                         </div>
                         <div>
                             <label class="block mb-2 text-sm text-gray-300">終了日</label>
                             <input type="date" id="dateTo"
-                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                                   class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white">
                         </div>
                         <div>
                             <label class="block mb-2 text-sm text-gray-300">カテゴリー</label>
                             <select id="categoryFilter"
-                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-white/20 transition-all duration-300 text-white">
+                                    class="w-full px-4 py-3 bg-purple-900/20 border border-purple-400/30 rounded-lg focus:outline-none focus:border-purple-400 focus:bg-purple-800/30 transition-all duration-300 text-white">
                                 <option value="" class="bg-gray-800">すべて</option>
                                 <option value="日常" class="bg-gray-800">日常</option>
                                 <option value="旅行" class="bg-gray-800">旅行</option>
@@ -366,7 +383,7 @@
                             検索
                         </button>
                         <button onclick="resetSearch()"
-                                class="flex-1 py-3 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transform hover:scale-105 transition-all duration-300 border border-white/20">
+                                class="flex-1 py-3 bg-purple-800/20 rounded-lg font-semibold hover:bg-purple-700/30 transform hover:scale-105 transition-all duration-300 border border-purple-400/30">
                             リセット
                         </button>
                         <button onclick="showExportModal()"
@@ -381,12 +398,12 @@
         
         <!-- タグフィルターセクション -->
         <div id="filterSection" class="mb-8 hidden">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
+            <div class="bg-purple-900/20 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-purple-400/30">
                 <h3 class="text-xl font-bold mb-4 text-purple-300">🏷️ タグフィルター</h3>
                 <div id="allTags" class="flex flex-wrap gap-2 mb-4"></div>
                 <div id="activeFilters" class="text-sm text-gray-300 mb-4"></div>
                 <button onclick="clearFilters()"
-                        class="px-4 py-2 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transition-all duration-300 border border-white/20">
+                        class="px-4 py-2 bg-purple-800/20 rounded-lg font-semibold hover:bg-purple-700/30 transition-all duration-300 border border-purple-400/30">
                     タグフィルターをクリア
                 </button>
             </div>
@@ -394,7 +411,7 @@
         
         <!-- 統計セクション -->
         <div id="statsSection" class="mb-8 hidden">
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
+            <div class="bg-purple-900/20 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-purple-400/30">
                 <h3 class="text-xl font-bold mb-6 text-purple-300">📊 統計・振り返り</h3>
                 <div id="statsContent"></div>
             </div>
@@ -1892,10 +1909,11 @@
             // レンダラー設定
             renderer = new THREE.WebGLRenderer({ 
                 canvas: document.getElementById('three-canvas'),
-                alpha: true,
+                alpha: false,
                 antialias: true 
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x1a0b2e, 1); // パープル系の背景色
             renderer.setPixelRatio(window.devicePixelRatio);
             
             // パーティクルシステム作成
@@ -1983,8 +2001,9 @@
             const saved = localStorage.getItem('customSettings');
             if (saved) {
                 customSettings = JSON.parse(saved);
-                applyCustomSettings();
             }
+            // 常に設定を適用（デフォルト値も含む）
+            applyCustomSettings();
         }
 
         // カスタマイズ設定の適用
@@ -2287,6 +2306,10 @@
 
         // 初期読み込み
         window.onload = () => {
+            // デフォルトでパープルテーマを適用
+            if (!localStorage.getItem('customSettings')) {
+                document.documentElement.className = 'theme-purple';
+            }
             loadCustomSettings();
             generateStars();
             init3DScene();
