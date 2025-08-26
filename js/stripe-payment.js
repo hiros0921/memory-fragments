@@ -2,9 +2,9 @@
 class StripePayment {
     constructor() {
         // TODO: 本番環境では環境変数から読み込む
-        this.publishableKey = 'pk_test_51xxxxxxxxxxxxx'; // Stripeダッシュボードから取得
+        this.publishableKey = 'pk_test_51RltmW2L9dU9afFcgj3IibP3Jm6bg23agDjacAWw6uF5O4X9YwAViLUIYDHYKCIJ7t0OvDJhVrKIrZek68O8YZQ100VvOyZoue'; // Stripe公開キー
         this.stripe = null;
-        this.priceId = 'price_xxxxxxxxxxxxx'; // 月額プランの価格ID
+        this.priceId = 'price_1Rtt2rRritviSYbG45juCphT'; // 月額500円プランの価格ID
         
         this.init();
     }
