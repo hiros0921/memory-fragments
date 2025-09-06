@@ -1,10 +1,10 @@
 // Stripe決済機能の実装
 class StripePayment {
     constructor() {
-        // TODO: 本番環境では環境変数から読み込む
-        this.publishableKey = 'pk_test_51RltmW2L9dU9afFcgj3IibP3Jm6bg23agDjacAWw6uF5O4X9YwAViLUIYDHYKCIJ7t0OvDJhVrKIrZek68O8YZQ100VvOyZoue'; // Stripe公開キー
+        // 本番環境設定
+        this.publishableKey = 'pk_live_51RltmMRritviSYbG5O496YZAUFGIfSiY5rpnvC3ywQ5YglzwjznE8cbKKCdYPUsVD0vsANHD9P2lgFcGFWxBM1jv00rle8KthP'; // Stripe本番公開キー
         this.stripe = null;
-        this.priceId = 'price_1Rtt2rRritviSYbG45juCphT'; // 月額500円プランの価格ID
+        this.priceId = 'price_1Rtt4MRritviSYbGuwIDp1WW'; // 月額500円プラン本番価格ID
         
         this.init();
     }
