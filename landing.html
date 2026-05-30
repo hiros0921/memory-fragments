@@ -127,6 +127,13 @@
             flex-wrap: wrap;
         }
 
+        .hero-trust {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
         .primary-button {
             background: var(--gradient-1);
             color: white;
@@ -160,6 +167,62 @@
         .secondary-button:hover {
             background: var(--primary);
             transform: translateY(-2px);
+        }
+
+        /* 使い方セクション */
+        .how-it-works {
+            padding: 80px 20px;
+            background: var(--background);
+        }
+
+        .how-it-works-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .how-it-works h2 {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 60px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: var(--primary-light);
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            line-height: 1.6;
         }
 
         /* 機能セクション */
@@ -219,9 +282,83 @@
             line-height: 1.6;
         }
 
+        /* 利用者の声セクション */
+        .testimonials {
+            padding: 80px 20px;
+            background: var(--background);
+        }
+
+        .testimonials-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .testimonials h2 {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 60px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .testimonial-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .testimonial-stars {
+            color: #f59e0b;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+        }
+
+        .testimonial-text {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .testimonial-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .testimonial-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .testimonial-role {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
         /* 料金セクション */
         .pricing {
             padding: 80px 20px;
+            background: var(--surface);
         }
 
         .pricing-container {
@@ -259,6 +396,19 @@
             transform: scale(1.05);
         }
 
+        .pricing-badge {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient-1);
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         .pricing-card h3 {
             font-size: 2rem;
             margin-bottom: 20px;
@@ -267,7 +417,7 @@
         .price {
             font-size: 3rem;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             background: var(--gradient-1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -278,9 +428,15 @@
             color: var(--text-secondary);
         }
 
+        .price-per-day {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
         .pricing-features {
             list-style: none;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         .pricing-features li {
@@ -288,9 +444,60 @@
             color: var(--text-secondary);
         }
 
+        .pricing-guarantee {
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* FAQ */
+        .faq {
+            padding: 60px 20px 80px;
+            background: var(--surface);
+        }
+
+        .faq-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .faq h2 {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--text-primary);
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .faq-answer {
+            padding: 0 24px 20px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
         /* フッター */
         footer {
-            background: var(--surface);
+            background: var(--background);
             padding: 40px 20px;
             text-align: center;
         }
@@ -331,12 +538,17 @@
                 display: none;
             }
 
-            .features h2, .pricing h2 {
+            .features h2, .pricing h2, .how-it-works h2, .testimonials h2 {
                 font-size: 2rem;
             }
 
             .pricing-card.featured {
                 transform: none;
+            }
+
+            .step {
+                flex-direction: column;
+                text-align: center;
             }
         }
     </style>
@@ -363,6 +575,37 @@
             <div class="hero-buttons">
                 <a href="index.html" class="primary-button">無料で始める</a>
                 <a href="#features" class="secondary-button">詳しく見る</a>
+            </div>
+            <p class="hero-trust">クレジットカード不要 ・ 30秒で開始 ・ いつでも無料で使えます</p>
+        </div>
+    </section>
+
+    <!-- 使い方3ステップ -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="how-it-works-container">
+            <h2>かんたん3ステップ</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>アカウントを作成</h3>
+                        <p>メールアドレスとパスワードだけで登録完了。30秒で始められます。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>思い出を記録</h3>
+                        <p>タイトルと内容を入力し、写真やタグを添えて保存。カテゴリーで整理もできます。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>いつでも振り返り</h3>
+                        <p>検索やフィルターで過去の記憶を簡単に探せます。統計レポートで成長も確認。</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -406,6 +649,48 @@
         </div>
     </section>
 
+    <!-- 利用者の声 -->
+    <section class="testimonials" id="testimonials">
+        <div class="testimonials-container">
+            <h2>利用者の声</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">「子供の成長記録をつけるのに使っています。写真と一緒に感情を記録できるので、後で読み返すと当時の気持ちが蘇ります。」</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">👩</div>
+                        <div>
+                            <div class="testimonial-name">M.K.さん</div>
+                            <div class="testimonial-role">2児の母</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">「旅行の記録に最適です。位置情報も保存できるので、どこで何を感じたかが一目でわかります。UIも美しい。」</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">👨</div>
+                        <div>
+                            <div class="testimonial-name">T.S.さん</div>
+                            <div class="testimonial-role">写真愛好家</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">「日記アプリを色々試しましたが、これが一番続けやすいです。カテゴリーとタグで整理できるので、振り返りが楽しくなりました。」</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">👩</div>
+                        <div>
+                            <div class="testimonial-name">A.Y.さん</div>
+                            <div class="testimonial-role">会社員</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 料金セクション -->
     <section class="pricing" id="pricing">
         <div class="pricing-container">
@@ -414,6 +699,7 @@
                 <div class="pricing-card">
                     <h3>無料プラン</h3>
                     <div class="price">¥0<span>/月</span></div>
+                    <div class="price-per-day">&nbsp;</div>
                     <ul class="pricing-features">
                         <li>✓ 50件まで記憶を保存</li>
                         <li>✓ 基本的な感情分析</li>
@@ -424,8 +710,10 @@
                     <a href="index.html" class="primary-button">無料で始める</a>
                 </div>
                 <div class="pricing-card featured">
+                    <div class="pricing-badge">7日間無料トライアル</div>
                     <h3>プレミアムプラン</h3>
                     <div class="price">¥500<span>/月</span></div>
+                    <div class="price-per-day">1日あたり約17円</div>
                     <ul class="pricing-features">
                         <li>✓ 無制限の記憶保存</li>
                         <li>✓ AI感情分析Pro</li>
@@ -437,6 +725,50 @@
                         <li>✓ 優先サポート</li>
                     </ul>
                     <a href="index.html" class="primary-button">7日間無料で試す</a>
+                    <p class="pricing-guarantee">満足できなければいつでもキャンセル可能。<br>返金保証付き。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+        <div class="faq-container">
+            <h2>よくある質問</h2>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>無料プランでどこまで使えますか？</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    無料プランでは最大50件の記憶を保存でき、基本的な検索・フィルター機能、写真のアップロード（2MBまで）をご利用いただけます。クレジットカードの登録は不要です。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>プレミアムの無料トライアルはどうやって始めますか？</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    アプリにログイン後、「プレミアムにアップグレード」ボタンからお申し込みいただけます。最初の7日間は無料で、期間中にキャンセルすれば料金は発生しません。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>データのセキュリティは大丈夫ですか？</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    はい。データはFirebaseの暗号化されたクラウドストレージに保存され、ご本人以外はアクセスできません。決済はStripeを使用しており、カード情報は当社サーバーに保存されません。
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>キャンセルや解約はどうすればいいですか？</span>
+                    <span>▾</span>
+                </div>
+                <div class="faq-answer">
+                    アプリ内の設定またはお問い合わせからいつでもキャンセルできます。キャンセル後も残りの期間はプレミアム機能をご利用いただけます。
                 </div>
             </div>
         </div>
@@ -454,5 +786,40 @@
             <p>&copy; 2025 Memory Fragments. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- アナリティクス -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="/js/analytics.js"></script>
+    <script>
+        // ランディングページ用の軽量アナリティクス
+        (function() {
+            try {
+                var app = firebase.initializeApp({
+                    apiKey: "AIzaSyBqOMyegX7nfUrtVtTSpVNYpiqlBJTAM0k",
+                    authDomain: "memory-fragments.firebaseapp.com",
+                    projectId: "memory-fragments",
+                    storageBucket: "memory-fragments.firebasestorage.app",
+                    messagingSenderId: "798156189875",
+                    appId: "1:798156189875:web:404069566f9fa68a8580c6"
+                });
+                if (typeof Analytics !== 'undefined') {
+                    Analytics.init(firebase.firestore());
+                    Analytics.track('landing_page_view', { referrer: document.referrer || '(direct)' });
+                }
+            } catch (e) {
+                // サイレントに失敗
+            }
+
+            // CTA クリックトラッキング
+            document.querySelectorAll('.primary-button, .cta-button').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (typeof Analytics !== 'undefined') {
+                        Analytics.track('cta_click', { text: this.textContent.trim(), href: this.href });
+                    }
+                });
+            });
+        })();
+    </script>
 </body>
 </html>

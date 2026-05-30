@@ -1,75 +1,71 @@
 // Service Worker for offline support
-const CACHE_NAME = 'memory-fragments-v1';
+const CACHE_VERSION = 2;
+const CACHE_NAME = 'memory-fragments-v' + CACHE_VERSION;
 const urlsToCache = [
     './',
     './index.html',
-    './css/auth-styles.css',
     './js/firebase-config.js',
     './js/auth-manager.js',
     './js/auth-ui.js',
     './js/storage-manager.js',
     './js/premium-features.js',
-    './js/upgrade-hooks.js',
-    './js/cloud-sync-manager.js'
+    './js/cloud-sync-manager.js',
+    './js/toast-notification.js',
+    './js/onboarding.js',
+    './js/analytics.js'
     // 外部URLはキャッシュから除外（CORSエラー回避）
 ];
 
-// インストール時にキャッシュ
+// インストール時にキャッシュ & skipWaiting
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Opened cache');
+                console.log('Opened cache:', CACHE_NAME);
                 return cache.addAll(urlsToCache);
             })
+            .then(() => self.skipWaiting())
     );
 });
 
-// フェッチリクエストの処理
+// フェッチリクエストの処理（Network-first with cache fallback）
 self.addEventListener('fetch', event => {
     // chrome-extension:// スキームのリクエストは除外
     const url = new URL(event.request.url);
     if (url.protocol === 'chrome-extension:') {
         return;
     }
-    
+
+    // APIリクエストやFirebaseはキャッシュしない
+    if (url.hostname.includes('googleapis.com') ||
+        url.hostname.includes('firebaseio.com') ||
+        url.hostname.includes('gstatic.com') ||
+        url.hostname.includes('stripe.com')) {
+        return;
+    }
+
     event.respondWith(
-        caches.match(event.request)
+        fetch(event.request)
             .then(response => {
-                // キャッシュがあればそれを返す
-                if (response) {
-                    return response;
-                }
-
-                // なければネットワークから取得
-                return fetch(event.request).then(
-                    response => {
-                        // 無効なレスポンスはキャッシュしない
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-
-                        // レスポンスをクローンしてキャッシュ
-                        const responseToCache = response.clone();
-
-                        // http(s)のリクエストのみキャッシュする
-                        if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
-                            caches.open(CACHE_NAME)
-                                .then(cache => {
-                                    cache.put(event.request, responseToCache)
-                                        .catch(err => {
-                                            console.error('Cache put error:', err);
-                                        });
-                                })
-                                .catch(err => {
-                                    console.error('Cache open error:', err);
-                                });
-                        }
-
-                        return response;
+                // 正常なレスポンスをキャッシュに保存
+                if (response && response.status === 200 && response.type === 'basic') {
+                    const responseToCache = response.clone();
+                    if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                cache.put(event.request, responseToCache).catch(() => {});
+                            })
+                            .catch(() => {});
                     }
-                ).catch(() => {
-                    // オフライン時のフォールバック
+                }
+                return response;
+            })
+            .catch(() => {
+                // オフライン時はキャッシュから返す
+                return caches.match(event.request).then(cachedResponse => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
                     return new Response('オフラインです。インターネット接続を確認してください。', {
                         status: 503,
                         statusText: 'Service Unavailable',
@@ -82,20 +78,19 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// キャッシュの更新
+// 古いキャッシュを削除 & クライアントを即座に制御
 self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
-
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
-                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
