@@ -1,1 +1,19 @@
 .vercel
+
+# 依存
+node_modules/
+
+# ビルド出力
+dist/
+.firebase/
+
+# 環境変数
+.env
+.env.local
+.env.*.local
+
+# アーカイブ・作業ファイル
+*.zip
+
+# macOS
+.DS_Store
