@@ -1,9 +1,14 @@
 {
-  "routes": [
-    { "src": "/app", "dest": "/app.html" },
-    { "src": "/new", "dest": "/app.html" }
+  "rewrites": [
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/new", "destination": "/index.html" },
+    { "source": "/app.html", "destination": "/index.html" },
+    { "source": "/new.html", "destination": "/index.html" }
   ],
-  "buildCommand": "",
-  "outputDirectory": ".",
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "framework": null
 }
