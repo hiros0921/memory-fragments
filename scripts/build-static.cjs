@@ -11,7 +11,8 @@ const assets = [
   'js/ai-emotion-analyzer.js', 'js/reminder-system.js',
   'js/app/config/constants.js', 'js/app/services/memory-repository.js',
   'js/app/services/memory-service.js', 'js/app/services/premium-service.js',
-  'js/app/services/image-service.js', 'js/app/services/location-service.js'
+  'js/app/services/image-service.js', 'js/app/services/location-service.js',
+  'js/app/demo/demo-memory-store.js'
 ];
 
 function buildStatic(output = path.join(root, 'dist')) {

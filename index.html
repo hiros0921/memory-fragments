@@ -605,6 +605,7 @@
     <script src="/js/app/services/premium-service.js"></script>
     <script src="/js/app/services/image-service.js"></script>
     <script src="/js/app/services/location-service.js"></script>
+    <script src="/js/app/demo/demo-memory-store.js"></script>
     
     <script>
         // Firebase設定
@@ -617,11 +618,15 @@
             appId: "1:798156189875:web:404069566f9fa68a8580c6"
         };
         
-        // Initialize Firebase
+        const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+
+        // Initialize Firebase. Demo mode deliberately creates no auth/data service instances.
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const storage = firebase.storage();
-        const db = firebase.firestore();
+        const auth = isDemoMode ? { currentUser: null } : firebase.auth();
+        const storage = isDemoMode ? null : firebase.storage();
+        const db = isDemoMode ? null : firebase.firestore();
+        const demoStore = isDemoMode ? new window.AppDemo.DemoMemoryStore() : null;
+        const demoUser = Object.freeze({ uid: window.AppDemo?.DEMO_USER_ID || 'demo-session' });
         
         let currentUser = null;
         let memories = [];
@@ -650,8 +655,8 @@
             locationService
         });
         
-        // 認証状態の監視
-        auth.onAuthStateChanged((user) => {
+        // 認証状態の監視（デモでは登録しない）
+        function handleAuthStateChanged(user) {
             if (currentUser !== user) {
                 const status = document.getElementById('status');
                 clearTimeout(status.statusTimeout);
@@ -713,7 +718,41 @@
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('uploadSection').style.display = 'none';
             }
-        });
+        }
+
+        if (!isDemoMode) {
+            auth.onAuthStateChanged(handleAuthStateChanged);
+        }
+
+        function startDemoMode() {
+            currentUser = demoUser;
+            memories = demoStore.list();
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('demoBanner')?.classList.remove('hidden');
+            document.getElementById('premiumStatusContainer').style.display = 'none';
+            document.getElementById('locationControl')?.classList.add('hidden');
+            document.getElementById('exportButton')?.classList.add('hidden');
+            for (const id of ['searchSection', 'statsSection', 'filterSection']) {
+                document.getElementById(id).classList.remove('hidden');
+            }
+            const memoryId = new URLSearchParams(window.location.search).get('id');
+            if (!memoryId) {
+                displayMemories();
+                return;
+            }
+            const memory = demoStore.getById(memoryId);
+            memory ? displaySingleMemoryView(memory) : displayNotFound();
+        }
+
+        function isCurrentMemoryOwner(memory) {
+            if (isDemoMode) return memory?.userId === demoUser.uid;
+            return Boolean(currentUser && auth.currentUser === currentUser && memory?.userId === currentUser.uid);
+        }
+
+        function demoHomeUrl() {
+            return isDemoMode ? `${window.location.pathname}?demo=true` : window.location.pathname;
+        }
         
         // プレミアムステータスをチェック
         async function checkPremiumStatus(uid) {
@@ -1069,8 +1108,8 @@
             imageService.clearPrivateImages();
             const grid = document.getElementById('memoriesGrid');
             grid.innerHTML = '';
-            if (!currentUser || auth.currentUser !== currentUser) return;
-            memories = memories.filter(memory => memory.userId === currentUser.uid);
+            if (!currentUser || (!isDemoMode && auth.currentUser !== currentUser)) return;
+            memories = memories.filter(isCurrentMemoryOwner);
             
             // 記憶がある場合は検索セクションと統計セクションを表示
             if (memories.length > 0) {
@@ -1227,9 +1266,11 @@
         // 単一の記憶を表示
         function displaySingleMemory(memoryId) {
             if (!currentUser) return;
-            const memory = memories.find(m => m.id === memoryId && m.userId === currentUser.uid);
+            const memory = memories.find(m => m.id === memoryId && isCurrentMemoryOwner(m));
             if (memory) {
                 displaySingleMemoryView(memory);
+            } else if (isDemoMode) {
+                displayNotFound();
             } else {
                 loadSingleMemory(memoryId);
             }
@@ -1262,7 +1303,7 @@
         
         // 単一の記憶ビューを表示
         function displaySingleMemoryView(memory) {
-            if (!currentUser || auth.currentUser !== currentUser || memory.userId !== currentUser.uid) return;
+            if (!isCurrentMemoryOwner(memory)) return;
             imageService.clearPrivateImages();
             // 不要な要素を非表示（要素が存在する場合のみ）
             const addMemoryForm = document.getElementById('addMemoryForm');
@@ -1348,13 +1389,13 @@
             }
             
             // URLパラメータを削除してページを再読み込み（より確実な方法）
-            window.location.href = window.location.pathname;
+            window.location.href = demoHomeUrl();
         }
         
         // すべての記憶に戻る
         function returnToAllMemories() {
             // URLパラメータを削除
-            window.history.pushState({}, '', window.location.pathname);
+            window.history.pushState({}, '', demoHomeUrl());
             
             // 要素を再表示
             if (currentUser) {
@@ -2224,7 +2265,9 @@
             const memoryId = urlParams.get('id');
             
             // 決済結果をチェック
-            checkPaymentResult();
+            if (!isDemoMode) checkPaymentResult();
+
+            if (isDemoMode) startDemoMode();
             
             
             // 日記の読み込みは認証完了後の onAuthStateChanged に限定する。
