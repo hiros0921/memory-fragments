@@ -19,7 +19,7 @@ evidence. Keep existing data, entitlements, contracts, and the 50-entry free lim
   explains how to back up via export before removing unwanted entries.
 - Archived the former browser function in `examples/checkout-reference.js`.
   The exact previous UI remains in Git commit `e72ae24`. Server implementation
-  remains in `functions/index.js`. Neither reference is in the public asset
+  remains in `archive/payment-reference/functions/index.js`. Neither reference is in the public asset
   allowlist; the browser archive is not a runnable or production-ready demo.
 
 ## Boundaries

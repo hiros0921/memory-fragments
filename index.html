@@ -206,6 +206,51 @@
         .star {
             animation: twinkle calc(3s / var(--animation-speed)) ease-in-out infinite;
         }
+
+        #appIntro,
+        #demoBanner {
+            overflow-wrap: anywhere;
+        }
+
+        .demo-action {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-action:focus-visible {
+            outline: 3px solid #fbbf24;
+            outline-offset: 3px;
+        }
+
+        @media (max-width: 420px) {
+            #appIntro,
+            #demoBanner {
+                padding: 1.25rem;
+            }
+
+            #appIntro .demo-action {
+                width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+
+            .animate-float,
+            .star,
+            .transform,
+            [class*="hover:scale-"] {
+                transform: none !important;
+            }
+        }
     </style>
     
     <!-- トースト通知 & オンボーディング & アナリティクス -->
@@ -255,6 +300,26 @@
                         <span id="storageLabel" class="text-xs text-gray-400"></span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 公開アプリの説明 -->
+        <section id="appIntro" class="max-w-3xl mx-auto mb-8 rounded-2xl border border-purple-300/30 bg-slate-950/70 p-6 sm:p-8 text-center shadow-2xl backdrop-blur-lg" aria-labelledby="appIntroTitle">
+            <p class="text-sm font-semibold tracking-widest text-amber-300">PORTFOLIO DEMO</p>
+            <h2 id="appIntroTitle" class="mt-2 text-2xl sm:text-3xl font-bold">写真と一緒に、日々の記憶を残す</h2>
+            <p class="mt-4 leading-7 text-gray-200">日記と写真を記録し、検索・分類・振り返りができる個人向けWebアプリです。</p>
+            <p class="mt-3 text-sm leading-6 text-gray-300">本人認証付き写真表示、クラウド保存と端末内フォールバック、検索・統計、個人データと公開デモの分離を実装しています。</p>
+            <a id="startDemoLink" href="/?demo=true" class="demo-action mt-6 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-7 py-3 font-bold text-slate-950 shadow-lg hover:from-amber-400 hover:to-orange-400">
+                デモを試す（ログイン不要）
+            </a>
+            <p class="mt-4 text-xs leading-5 text-gray-400">デモ内の日記と写真はすべて架空です。追加・削除した内容はページを閉じると消え、個人用データには保存されません。</p>
+        </section>
+
+        <!-- デモ利用中の注意 -->
+        <div id="demoBanner" role="status" class="hidden max-w-3xl mx-auto mb-8 rounded-2xl border border-amber-300/50 bg-amber-950/80 p-5 text-amber-50 shadow-xl backdrop-blur-lg">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="leading-6"><strong>デモモード — 架空データのみ。</strong>変更は再読み込みでリセットされます。</p>
+                <a id="exitDemoLink" href="/" class="demo-action shrink-0 rounded-full border border-amber-200/60 px-5 py-2 font-semibold hover:bg-amber-100/10">デモを終了</a>
             </div>
         </div>
         
@@ -327,7 +392,7 @@
                         <div id="imageInfo" class="mt-2 text-xs text-gray-400 hidden"></div>
                     </div>
                     
-                    <div class="flex items-center gap-3">
+                    <div id="locationControl" class="flex items-center gap-3">
                         <input type="checkbox" id="locationPermission" class="w-5 h-5 rounded border-purple-400/30 bg-purple-900/20 text-purple-600 focus:ring-purple-600 focus:ring-2">
                         <label for="locationPermission" class="cursor-pointer">📍 現在地を記録する</label>
                         <span id="locationStatus" class="text-sm text-gray-400"></span>
@@ -395,7 +460,7 @@
                                 class="flex-1 py-3 bg-purple-800/20 rounded-lg font-semibold hover:bg-purple-700/30 transform hover:scale-105 transition-all duration-300 border border-purple-400/30">
                             リセット
                         </button>
-                        <button onclick="showExportModal()"
+                        <button id="exportButton" onclick="showExportModal()"
                                 class="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-300">
                             📤 エクスポート
                         </button>
@@ -605,6 +670,7 @@
     <script src="/js/app/services/premium-service.js"></script>
     <script src="/js/app/services/image-service.js"></script>
     <script src="/js/app/services/location-service.js"></script>
+    <script src="/js/app/demo/demo-memory-store.js"></script>
     
     <script>
         // Firebase設定
@@ -617,11 +683,15 @@
             appId: "1:798156189875:web:404069566f9fa68a8580c6"
         };
         
-        // Initialize Firebase
+        const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+
+        // Initialize Firebase. Demo mode deliberately creates no auth/data service instances.
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const storage = firebase.storage();
-        const db = firebase.firestore();
+        const auth = isDemoMode ? { currentUser: null } : firebase.auth();
+        const storage = isDemoMode ? null : firebase.storage();
+        const db = isDemoMode ? null : firebase.firestore();
+        const demoStore = isDemoMode ? new window.AppDemo.DemoMemoryStore() : null;
+        const demoUser = Object.freeze({ uid: window.AppDemo?.DEMO_USER_ID || 'demo-session' });
         
         let currentUser = null;
         let memories = [];
@@ -650,8 +720,8 @@
             locationService
         });
         
-        // 認証状態の監視
-        auth.onAuthStateChanged((user) => {
+        // 認証状態の監視（デモでは登録しない）
+        function handleAuthStateChanged(user) {
             if (currentUser !== user) {
                 const status = document.getElementById('status');
                 clearTimeout(status.statusTimeout);
@@ -713,7 +783,41 @@
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('uploadSection').style.display = 'none';
             }
-        });
+        }
+
+        if (!isDemoMode) {
+            auth.onAuthStateChanged(handleAuthStateChanged);
+        }
+
+        function startDemoMode() {
+            currentUser = demoUser;
+            memories = demoStore.list();
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('demoBanner')?.classList.remove('hidden');
+            document.getElementById('premiumStatusContainer').style.display = 'none';
+            document.getElementById('locationControl')?.classList.add('hidden');
+            document.getElementById('exportButton')?.classList.add('hidden');
+            for (const id of ['searchSection', 'statsSection', 'filterSection']) {
+                document.getElementById(id).classList.remove('hidden');
+            }
+            const memoryId = new URLSearchParams(window.location.search).get('id');
+            if (!memoryId) {
+                displayMemories();
+                return;
+            }
+            const memory = demoStore.getById(memoryId);
+            memory ? displaySingleMemoryView(memory) : displayNotFound();
+        }
+
+        function isCurrentMemoryOwner(memory) {
+            if (isDemoMode) return memory?.userId === demoUser.uid;
+            return Boolean(currentUser && auth.currentUser === currentUser && memory?.userId === currentUser.uid);
+        }
+
+        function demoHomeUrl() {
+            return isDemoMode ? `${window.location.pathname}?demo=true` : window.location.pathname;
+        }
         
         // プレミアムステータスをチェック
         async function checkPremiumStatus(uid) {
@@ -820,9 +924,73 @@
                 throw error;
             }
         }
+
+        function readDemoImage(file) {
+            if (!file) return Promise.resolve(null);
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                return Promise.reject(new Error('JPEG、PNG、WebP形式の画像を選択してください'));
+            }
+            if (file.size > 5000000) {
+                return Promise.reject(new Error('デモでは5MB以下の画像を選択してください'));
+            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('画像を読み込めませんでした'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function saveDemoMemory() {
+            if (activeMemorySave) return;
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
+            const tags = document.getElementById('tags').value.trim().split(/\s+/).filter(Boolean);
+            const imageFile = document.getElementById('imageFile').files[0];
+            const validation = memoryService.validateMemoryInput({ title, content, category });
+            if (!validation.ok) {
+                showStatus('status', validation.message, true, 0);
+                return;
+            }
+
+            const operation = {
+                cancelled: false,
+                releaseUI() {
+                    if (activeMemorySave === operation) activeMemorySave = null;
+                }
+            };
+            activeMemorySave = operation;
+            try {
+                const demoImageUrl = await readDemoImage(imageFile);
+                const stored = demoStore.add({
+                    userId: demoUser.uid,
+                    title,
+                    content,
+                    category,
+                    tags,
+                    createdAt: new Date().toISOString(),
+                    ...(demoImageUrl ? {
+                        demoImageUrl,
+                        demoImageAlt: `デモで追加した画像：${title}`
+                    } : {})
+                });
+                memories = demoStore.list();
+                clearForm();
+                displayMemories();
+                showStatus('status', '✅ デモに追加しました。再読み込みすると消えます。', false, 0);
+                return stored;
+            } catch (error) {
+                showStatus('status', `❌ ${error.message}`, true, 0);
+                return null;
+            } finally {
+                operation.releaseUI();
+            }
+        }
         
         // 記憶を保存。永続化の失敗と、保存後の表示・計測の失敗を分ける。
         async function saveMemory() {
+            if (isDemoMode) return saveDemoMemory();
             if (activeMemorySave) return;
             const operation = { cancelled: false };
             const savingUser = currentUser;
@@ -1069,8 +1237,8 @@
             imageService.clearPrivateImages();
             const grid = document.getElementById('memoriesGrid');
             grid.innerHTML = '';
-            if (!currentUser || auth.currentUser !== currentUser) return;
-            memories = memories.filter(memory => memory.userId === currentUser.uid);
+            if (!currentUser || (!isDemoMode && auth.currentUser !== currentUser)) return;
+            memories = memories.filter(isCurrentMemoryOwner);
             
             // 記憶がある場合は検索セクションと統計セクションを表示
             if (memories.length > 0) {
@@ -1167,9 +1335,11 @@
                 const item = document.createElement('div');
                 item.className = 'bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 relative group';
                 item.innerHTML = `
-                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="deleteMemory('${memory.id}')" 
-                                class="w-10 h-10 bg-red-600/50 rounded-full flex items-center justify-center hover:bg-red-600 transition-all">
+                    <div class="absolute top-3 right-3 flex gap-2">
+                        <button type="button"
+                                data-memory-delete
+                                aria-label="記憶を削除"
+                                class="min-w-11 min-h-11 bg-red-600/70 rounded-full flex items-center justify-center hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors">
                             ×
                         </button>
                     </div>
@@ -1186,24 +1356,43 @@
                                 </span>
                             `).join('')}
                         </div>` : ''}
-                    ${memory.imageUrl || memory.imageData ?
+                    ${memory.imageUrl || memory.imageData || memory.demoImageUrl ?
                         `<div data-private-photo class="mb-4 text-sm text-gray-400">写真を読み込み中…</div>` : ''}
                     ${memory.location ? 
                         `<button onclick="openMap(${memory.location.lat}, ${memory.location.lng})" 
                                  class="text-sm text-purple-300 hover:text-purple-400 transition-colors">
                             📍 位置情報あり (クリックで地図を開く)
                         </button>` : ''}
+                    <button type="button"
+                            data-memory-details
+                            class="mt-4 min-h-11 w-full rounded-lg border border-purple-300/40 bg-purple-700/30 px-4 py-2 font-semibold text-purple-100 hover:bg-purple-600/40 transition-colors">
+                        詳細を見る
+                    </button>
                 `;
                 grid.appendChild(item);
                 item.querySelectorAll('[data-private-tag]').forEach(element => {
                     element.addEventListener('click', () => toggleTagFilter(memory.tags[Number(element.dataset.privateTag)]));
                 });
+                const deleteButton = item.querySelector('[data-memory-delete]');
+                deleteButton.dataset.memoryDelete = String(memory.id);
+                deleteButton.setAttribute('aria-label', `「${memory.title}」を削除`);
+                deleteButton.addEventListener('click', () => deleteMemory(memory.id));
+                const detailsButton = item.querySelector('[data-memory-details]');
+                detailsButton.dataset.memoryDetails = String(memory.id);
+                detailsButton.addEventListener('click', () => displaySingleMemory(memory.id));
                 renderPrivatePhoto(item, memory, 'w-full h-48 object-cover rounded-lg mb-4');
             });
         }
         
         // 記憶を削除
         async function deleteMemory(id) {
+            if (isDemoMode) {
+                if (!confirm('このデモ記憶を削除しますか？')) return;
+                demoStore.remove(id);
+                memories = demoStore.list();
+                displayMemories();
+                return;
+            }
             const user = currentUser;
             if (!user || auth.currentUser !== user) return;
             if (!confirm('この記憶を削除しますか？')) return;
@@ -1227,9 +1416,11 @@
         // 単一の記憶を表示
         function displaySingleMemory(memoryId) {
             if (!currentUser) return;
-            const memory = memories.find(m => m.id === memoryId && m.userId === currentUser.uid);
+            const memory = memories.find(m => m.id === memoryId && isCurrentMemoryOwner(m));
             if (memory) {
                 displaySingleMemoryView(memory);
+            } else if (isDemoMode) {
+                displayNotFound();
             } else {
                 loadSingleMemory(memoryId);
             }
@@ -1238,6 +1429,25 @@
         async function renderPrivatePhoto(container, memory, className) {
             const placeholder = container.querySelector('[data-private-photo]');
             if (!placeholder) return;
+            if (isDemoMode) {
+                if (!isCurrentMemoryOwner(memory) || !memory.demoImageUrl) {
+                    placeholder.textContent = 'デモ画像を表示できませんでした。';
+                    return;
+                }
+                const image = document.createElement('img');
+                image.alt = memory.demoImageAlt || 'デモ用合成画像';
+                image.className = className;
+                image.addEventListener('error', () => {
+                    if (!image.isConnected) return;
+                    const message = document.createElement('div');
+                    message.className = 'mb-4 text-sm text-gray-400';
+                    message.textContent = 'デモ画像を表示できませんでした。';
+                    image.replaceWith(message);
+                }, { once: true });
+                image.src = memory.demoImageUrl;
+                placeholder.replaceWith(image);
+                return;
+            }
             const user = currentUser;
             try {
                 const src = await imageService.loadPrivateImage(memory, user);
@@ -1262,7 +1472,7 @@
         
         // 単一の記憶ビューを表示
         function displaySingleMemoryView(memory) {
-            if (!currentUser || auth.currentUser !== currentUser || memory.userId !== currentUser.uid) return;
+            if (!isCurrentMemoryOwner(memory)) return;
             imageService.clearPrivateImages();
             // 不要な要素を非表示（要素が存在する場合のみ）
             const addMemoryForm = document.getElementById('addMemoryForm');
@@ -1287,7 +1497,7 @@
             const grid = document.getElementById('memoriesGrid');
             grid.innerHTML = `
                 <div class="max-w-2xl mx-auto">
-                    <button onclick="goBackToHome()" 
+                    <button type="button" data-memory-back
                             class="mb-6 px-4 py-2 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
                         ← すべての記憶に戻る
                     </button>
@@ -1306,7 +1516,7 @@
                                 ).join('')}
                             </div>` : ''}
                         
-                        ${memory.imageUrl || memory.imageData ? 
+                        ${memory.imageUrl || memory.imageData || memory.demoImageUrl ?
                             `<div data-private-photo class="mb-6 text-sm text-gray-400">写真を読み込み中…</div>` : ''}
                         
                         ${memory.location ? 
@@ -1316,11 +1526,14 @@
                             </button>` : ''}
                         
                         <div class="mt-8 pt-6 border-t border-white/20">
-                            <p class="text-sm text-gray-400">この記憶と写真は、ログインした本人だけが閲覧できます。</p>
+                            <p class="text-sm text-gray-400">${isDemoMode
+                                ? 'これはデモ用の架空データです。変更内容は個人用データへ保存されません。'
+                                : 'この記憶と写真は、ログインした本人だけが閲覧できます。'}</p>
                         </div>
                     </div>
                 </div>
             `;
+            grid.querySelector('[data-memory-back]').addEventListener('click', goBackToHome);
             renderPrivatePhoto(grid, memory, 'w-full rounded-lg mb-6 shadow-lg');
         }
         
@@ -1331,12 +1544,13 @@
             grid.innerHTML = `
                 <div class="text-center py-20">
                     <p class="text-2xl text-gray-400 mb-4">記憶が見つかりませんでした</p>
-                    <button onclick="goBackToHome()" 
+                    <button type="button" data-memory-back
                             class="px-6 py-3 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
                         トップページに戻る
                     </button>
                 </div>
             `;
+            grid.querySelector('[data-memory-back]').addEventListener('click', goBackToHome);
         }
         
         // ホームに戻る（モバイル対応版）
@@ -1346,15 +1560,20 @@
             if (style && style.textContent.includes('#authSection, #uploadSection')) {
                 style.remove();
             }
+
+            if (isDemoMode) {
+                returnToAllMemories();
+                return;
+            }
             
             // URLパラメータを削除してページを再読み込み（より確実な方法）
-            window.location.href = window.location.pathname;
+            window.location.href = demoHomeUrl();
         }
         
         // すべての記憶に戻る
         function returnToAllMemories() {
             // URLパラメータを削除
-            window.history.pushState({}, '', window.location.pathname);
+            window.history.pushState({}, '', demoHomeUrl());
             
             // 要素を再表示
             if (currentUser) {
@@ -1367,6 +1586,9 @@
                 
                 const searchSection = document.getElementById('searchSection');
                 if (searchSection) searchSection.style.display = 'block';
+
+                const filterSection = document.getElementById('filterSection');
+                if (filterSection) filterSection.style.display = '';
                 
                 const statsSection = document.getElementById('statsSection');
                 if (statsSection) statsSection.style.display = 'block';
@@ -1516,11 +1738,12 @@
             
             // アクティブなフィルターを表示
             const activeFiltersDiv = document.getElementById('activeFilters');
+            activeFiltersDiv.replaceChildren();
             if (activeTagFilters.size > 0) {
-                activeFiltersDiv.innerHTML = '<p style="margin-top: 15px;">フィルター中: ' + 
-                    Array.from(activeTagFilters).join(', ') + '</p>';
-            } else {
-                activeFiltersDiv.innerHTML = '';
+                const activeFiltersText = document.createElement('p');
+                activeFiltersText.style.marginTop = '15px';
+                activeFiltersText.textContent = `フィルター中: ${Array.from(activeTagFilters).join(', ')}`;
+                activeFiltersDiv.appendChild(activeFiltersText);
             }
         }
         
@@ -1811,6 +2034,10 @@
         }
         
         function animate() {
+            if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+                renderer.render(scene, camera);
+                return;
+            }
             requestAnimationFrame(animate);
             
             // パーティクルの回転
@@ -2217,14 +2444,21 @@
             }
             loadCustomSettings();
             generateStars();
-            init3DScene();
+            try {
+                init3DScene();
+            } catch (error) {
+                // The animated background is decorative; the diary must remain usable without WebGL.
+                console.warn('Decorative 3D scene unavailable', error?.name || 'Error');
+            }
             
             // URLパラメータを最初にチェック
             const urlParams = new URLSearchParams(window.location.search);
             const memoryId = urlParams.get('id');
             
             // 決済結果をチェック
-            checkPaymentResult();
+            if (!isDemoMode) checkPaymentResult();
+
+            if (isDemoMode) startDemoMode();
             
             
             // 日記の読み込みは認証完了後の onAuthStateChanged に限定する。
