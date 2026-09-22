@@ -206,6 +206,45 @@
         .star {
             animation: twinkle calc(3s / var(--animation-speed)) ease-in-out infinite;
         }
+
+        #appIntro,
+        #demoBanner {
+            overflow-wrap: anywhere;
+        }
+
+        .demo-action {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-action:focus-visible {
+            outline: 3px solid #fbbf24;
+            outline-offset: 3px;
+        }
+
+        @media (max-width: 420px) {
+            #appIntro,
+            #demoBanner {
+                padding: 1.25rem;
+            }
+
+            #appIntro .demo-action {
+                width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .animate-float,
+            .star,
+            #appIntro *,
+            #demoBanner * {
+                animation: none !important;
+                transition: none !important;
+                transform: none !important;
+            }
+        }
     </style>
     
     <!-- トースト通知 & オンボーディング & アナリティクス -->
@@ -255,6 +294,26 @@
                         <span id="storageLabel" class="text-xs text-gray-400"></span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 公開アプリの説明 -->
+        <section id="appIntro" class="max-w-3xl mx-auto mb-8 rounded-2xl border border-purple-300/30 bg-slate-950/70 p-6 sm:p-8 text-center shadow-2xl backdrop-blur-lg" aria-labelledby="appIntroTitle">
+            <p class="text-sm font-semibold tracking-widest text-amber-300">PORTFOLIO DEMO</p>
+            <h2 id="appIntroTitle" class="mt-2 text-2xl sm:text-3xl font-bold">写真と一緒に、日々の記憶を残す</h2>
+            <p class="mt-4 leading-7 text-gray-200">日記と写真を記録し、検索・分類・振り返りができる個人向けWebアプリです。</p>
+            <p class="mt-3 text-sm leading-6 text-gray-300">本人認証付き写真表示、クラウド保存と端末内フォールバック、検索・統計、個人データと公開デモの分離を実装しています。</p>
+            <a id="startDemoLink" href="/?demo=true" class="demo-action mt-6 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-7 py-3 font-bold text-slate-950 shadow-lg hover:from-amber-400 hover:to-orange-400">
+                デモを試す（ログイン不要）
+            </a>
+            <p class="mt-4 text-xs leading-5 text-gray-400">デモ内の日記と写真はすべて架空です。追加・削除した内容はページを閉じると消え、個人用データには保存されません。</p>
+        </section>
+
+        <!-- デモ利用中の注意 -->
+        <div id="demoBanner" role="status" class="hidden max-w-3xl mx-auto mb-8 rounded-2xl border border-amber-300/50 bg-amber-950/80 p-5 text-amber-50 shadow-xl backdrop-blur-lg">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="leading-6"><strong>デモモード — 架空データのみ。</strong>変更は再読み込みでリセットされます。</p>
+                <a id="exitDemoLink" href="/" class="demo-action shrink-0 rounded-full border border-amber-200/60 px-5 py-2 font-semibold hover:bg-amber-100/10">デモを終了</a>
             </div>
         </div>
         
@@ -327,7 +386,7 @@
                         <div id="imageInfo" class="mt-2 text-xs text-gray-400 hidden"></div>
                     </div>
                     
-                    <div class="flex items-center gap-3">
+                    <div id="locationControl" class="flex items-center gap-3">
                         <input type="checkbox" id="locationPermission" class="w-5 h-5 rounded border-purple-400/30 bg-purple-900/20 text-purple-600 focus:ring-purple-600 focus:ring-2">
                         <label for="locationPermission" class="cursor-pointer">📍 現在地を記録する</label>
                         <span id="locationStatus" class="text-sm text-gray-400"></span>
@@ -395,7 +454,7 @@
                                 class="flex-1 py-3 bg-purple-800/20 rounded-lg font-semibold hover:bg-purple-700/30 transform hover:scale-105 transition-all duration-300 border border-purple-400/30">
                             リセット
                         </button>
-                        <button onclick="showExportModal()"
+                        <button id="exportButton" onclick="showExportModal()"
                                 class="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-300">
                             📤 エクスポート
                         </button>

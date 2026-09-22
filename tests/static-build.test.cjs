@@ -66,3 +66,36 @@ test('emotion analysis output does not sell an upgrade',()=>{
   assert.match(html,/AI感情分析/);
   assert.doesNotMatch(html,/アップグレード|購入/);
 });
+
+test('public landing explains the app and offers a login-free demo', () => {
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM(fs.readFileSync('index.html', 'utf8'));
+  try {
+    const body = dom.window.document.body;
+    assert.match(body.textContent, /日記と写真を記録/);
+    assert.match(body.textContent, /本人認証付き写真表示/);
+    assert.equal(body.querySelector('#startDemoLink').getAttribute('href'), '/?demo=true');
+    assert.match(body.querySelector('#startDemoLink').textContent, /ログイン不要/);
+  } finally {
+    dom.window.close();
+  }
+});
+
+test('public build includes only local demo code and three generated images', () => {
+  const { buildStatic } = require('../scripts/build-static.cjs');
+  const output = fs.mkdtempSync(path.join(os.tmpdir(), 'memory-fragments-demo-'));
+  buildStatic(output);
+  for (const asset of [
+    'js/app/demo/demo-memory-store.js',
+    'assets/demo/demo-sunset.png',
+    'assets/demo/demo-cafe.png',
+    'assets/demo/demo-goal.png'
+  ]) {
+    assert.ok(fs.statSync(path.join(output, asset)).size > 0, asset);
+  }
+  const source = fs.readFileSync(
+    path.join(output, 'js/app/demo/demo-memory-store.js'),
+    'utf8'
+  );
+  assert.doesNotMatch(source, /https?:\/\//);
+});

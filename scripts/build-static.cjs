@@ -12,7 +12,9 @@ const assets = [
   'js/app/config/constants.js', 'js/app/services/memory-repository.js',
   'js/app/services/memory-service.js', 'js/app/services/premium-service.js',
   'js/app/services/image-service.js', 'js/app/services/location-service.js',
-  'js/app/demo/demo-memory-store.js'
+  'js/app/demo/demo-memory-store.js',
+  'assets/demo/demo-sunset.png', 'assets/demo/demo-cafe.png',
+  'assets/demo/demo-goal.png'
 ];
 
 function buildStatic(output = path.join(root, 'dist')) {
