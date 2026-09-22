@@ -1198,14 +1198,12 @@
             // 日付フィルター
             if (searchFilters.dateFrom) {
                 filteredMemories = filteredMemories.filter(memory => 
-                    new Date(memory.createdAt) >= new Date(searchFilters.dateFrom)
+                    memoryDateKey(memory.createdAt) >= searchFilters.dateFrom
                 );
             }
             if (searchFilters.dateTo) {
-                const endDate = new Date(searchFilters.dateTo);
-                endDate.setHours(23, 59, 59, 999);
                 filteredMemories = filteredMemories.filter(memory => 
-                    new Date(memory.createdAt) <= endDate
+                    memoryDateKey(memory.createdAt) !== '' && memoryDateKey(memory.createdAt) <= searchFilters.dateTo
                 );
             }
             
@@ -1266,7 +1264,7 @@
                         </button>
                     </div>
                     <h3 class="text-xl font-bold mb-2 text-purple-300">${escapeHtml(memory.title)}</h3>
-                    <p class="text-sm text-gray-400 mb-2">${new Date(memory.createdAt).toLocaleString()}</p>
+                    <p class="text-sm text-gray-400 mb-2">${formatMemoryDate(memory.createdAt, true)}</p>
                     <span class="inline-block px-3 py-1 bg-purple-600/30 rounded-full text-xs mb-4">${escapeHtml(memory.category)}</span>
                     <p class="text-gray-300 mb-4 line-clamp-3">${escapeHtml(memory.content)}</p>
                     ${memory.tags && memory.tags.length > 0 ? 
@@ -1386,7 +1384,7 @@
                     
                     <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
                         <h2 class="text-3xl font-bold mb-4 text-purple-300">${escapeHtml(memory.title)}</h2>
-                        <p class="text-gray-400 mb-4">${new Date(memory.createdAt).toLocaleString()}</p>
+                        <p class="text-gray-400 mb-4">${formatMemoryDate(memory.createdAt, true)}</p>
                         <span class="inline-block px-4 py-2 bg-purple-600/30 rounded-full text-sm mb-6">${escapeHtml(memory.category)}</span>
                         
                         <div class="text-gray-300 mb-6 whitespace-pre-wrap">${escapeHtml(memory.content)}</div>
@@ -1731,19 +1729,18 @@
             const yearStats = {};
             const monthStats = {};
             const categoryStats = {};
-            const currentYear = new Date().getFullYear();
+            const currentYear = memoryDateKey(new Date()).slice(0, 4);
             
             memories.forEach(memory => {
-                const date = new Date(memory.createdAt);
-                const year = date.getFullYear();
-                const month = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const day = memoryDateKey(memory.createdAt);
+                const year = day.slice(0, 4);
                 
                 // 年別統計
-                yearStats[year] = (yearStats[year] || 0) + 1;
+                if (day) yearStats[year] = (yearStats[year] || 0) + 1;
                 
                 // 月別統計（現在年のみ）
                 if (year === currentYear) {
-                    const monthName = date.toLocaleDateString('ja-JP', { month: 'long' });
+                    const monthName = `${Number(day.slice(5, 7))}月`;
                     monthStats[monthName] = (monthStats[monthName] || 0) + 1;
                 }
                 
@@ -1866,11 +1863,10 @@
         
         // 今月の記憶数を取得
         function getCurrentMonthCount() {
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const currentMonth = memoryDateKey(new Date()).slice(0, 7);
             
             return memories.filter(memory => {
-                const memoryMonth = memory.createdAt.substring(0, 7);
+                const memoryMonth = memoryDateKey(memory.createdAt).slice(0, 7);
                 return memoryMonth === currentMonth;
             }).length;
         }
@@ -2171,6 +2167,85 @@
             showStatus('status', '✅ カスタマイズをリセットしました', false);
         }
 
+        // 保存済みの値は変更せず、旧形式も同じ方法で読み取る。
+        function parseMemoryDate(value) {
+            try {
+                let date;
+                if (value == null || value === '' || typeof value === 'boolean') return null;
+                if (typeof value === 'string') {
+                    // ISO日付以外をブラウザー任せで推測しない。存在しない日付も拒否する。
+                    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/);
+                    if (!match) return null;
+                    const [, year, month, day] = match;
+                    const check = new Date(`${year}-${month}-${day}T00:00:00Z`);
+                    if (!Number.isFinite(check.getTime()) || check.toISOString().slice(0, 10) !== `${year}-${month}-${day}`) return null;
+                    // オフセットのない旧日付は日本時間として扱う。
+                    const iso = value.length === 10 ? `${value}T00:00:00+09:00`
+                        : /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}+09:00`;
+                    date = new Date(iso);
+                } else if (typeof value === 'number') {
+                    date = new Date(value); // 数値はUnixミリ秒。
+                } else if (typeof value.toDate === 'function') {
+                    date = value.toDate();
+                } else if (Object.prototype.toString.call(value) === '[object Date]') {
+                    date = new Date(value.getTime());
+                } else {
+                    const seconds = value.seconds ?? value._seconds;
+                    const nanos = value.nanoseconds ?? value._nanoseconds ?? 0;
+                    if (!Number.isInteger(seconds) || !Number.isInteger(nanos) || nanos < 0 || nanos >= 1e9) return null;
+                    date = new Date(seconds * 1000 + Math.floor(nanos / 1e6));
+                }
+                return date && Number.isFinite(date.getTime()) ? date : null;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function memoryDateKey(value) {
+            const date = parseMemoryDate(value);
+            if (!date) return '';
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(date);
+            const part = type => parts.find(p => p.type === type).value;
+            return `${part('year').padStart(4, '0')}-${part('month')}-${part('day')}`;
+        }
+
+        function formatMemoryDate(value, withTime = false) {
+            const date = parseMemoryDate(value);
+            if (!date) return '日付不明';
+            const options = { timeZone: 'Asia/Tokyo' };
+            return withTime ? date.toLocaleString('ja-JP', options) : date.toLocaleDateString('ja-JP', options);
+        }
+
+        // OSでの保存完了は検出できないため、ファイルの準備完了までを通知する。
+        function downloadMemoryExport(extension, type, serialize) {
+            if (!currentUser || auth.currentUser?.uid !== currentUser.uid) {
+                showStatus('status', '❌ 書き出しにはログインしてください', true);
+                closeExportModal();
+                return;
+            }
+            let url, link;
+            try {
+                const ownMemories = memories.filter(memory => memory.userId === currentUser.uid);
+                const blob = new Blob([serialize(ownMemories)], { type });
+                url = URL.createObjectURL(blob);
+                link = document.createElement('a');
+                link.href = url;
+                link.download = `memory-fragments-${memoryDateKey(new Date())}.${extension}`;
+                document.body.appendChild(link);
+                link.click();
+                showStatus('status', '✅ 書き出しファイルを準備しました。ブラウザーのダウンロードをご確認ください', false);
+            } catch (_) {
+                showStatus('status', '❌ 書き出しに失敗しました。日記は変更していません。もう一度お試しください', true);
+            } finally {
+                link?.remove();
+                // Safariにもダウンロード開始の時間を与えてから解放する。
+                if (url) setTimeout(() => URL.revokeObjectURL(url), 60000);
+                closeExportModal();
+            }
+        }
+
         // エクスポートモーダルを表示
         function showExportModal() {
             const modal = document.getElementById('exportModal');
@@ -2191,6 +2266,7 @@
 
         // HTML形式でエクスポート
         function exportToHTML() {
+            downloadMemoryExport('html', 'text/html;charset=utf-8', ownMemories => {
             // HTMLコンテンツを作成
             let htmlContent = `
                 <!DOCTYPE html>
@@ -2211,19 +2287,19 @@
                 </head>
                 <body>
                     <h1>Memory Fragments</h1>
-                    <div class="date">Export Date: ${new Date().toLocaleDateString('ja-JP')}</div>
+                    <div class="date">Export Date: ${formatMemoryDate(new Date())}（日本時間）</div>
             `;
             
-            memories.forEach((memory, index) => {
-                const date = memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : '日付不明';
-                const tags = memory.tags && memory.tags.length > 0 ? memory.tags.join(', ') : '';
+            ownMemories.forEach((memory, index) => {
+                const date = formatMemoryDate(memory.createdAt);
+                const tags = Array.isArray(memory.tags) ? memory.tags.join(', ') : '';
                 
                 htmlContent += `
                     <div class="memory">
-                        <div class="memory-title">${index + 1}. ${memory.title || '無題'}</div>
-                        <div class="memory-meta">日付: ${date} | カテゴリー: ${memory.category || 'その他'}</div>
-                        <div class="memory-content">${(memory.content || '内容なし').replace(/\n/g, '<br>')}</div>
-                        ${tags ? `<div class="memory-tags">タグ: ${tags}</div>` : ''}
+                        <div class="memory-title">${index + 1}. ${escapeHtml(memory.title || '無題')}</div>
+                        <div class="memory-meta">日付: ${date} | カテゴリー: ${escapeHtml(memory.category || 'その他')}</div>
+                        <div class="memory-content">${escapeHtml(memory.content || '内容なし').replace(/\r\n|\r|\n/g, '<br>')}</div>
+                        ${tags ? `<div class="memory-tags">タグ: ${escapeHtml(tags)}</div>` : ''}
                     </div>
                 `;
             });
@@ -2233,26 +2309,20 @@
                 </html>
             `;
             
-            // HTMLファイルとしてダウンロード
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.html`;
-            link.click();
-            
-            showStatus('status', '✅ HTML形式でダウンロードしました', false);
-            closeExportModal();
+            return htmlContent;
+            });
         }
 
         // CSV形式でエクスポート
         function exportToCSV() {
+            downloadMemoryExport('csv', 'text/csv;charset=utf-8', ownMemories => {
             const headers = ['タイトル', '内容', 'カテゴリー', 'タグ', '日付'];
-            const rows = memories.map(memory => [
+            const rows = ownMemories.map(memory => [
                 memory.title || '',
                 memory.content || '',
                 memory.category || '',
-                (memory.tags || []).join(';'),
-                memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : ''
+                (Array.isArray(memory.tags) ? memory.tags : []).join(';'),
+                formatMemoryDate(memory.createdAt)
             ]);
             
             // BOMを追加（Excelで文字化けを防ぐ）
@@ -2261,66 +2331,53 @@
             
             rows.forEach(row => {
                 const escapedRow = row.map(field => {
-                    // カンマや改行を含む場合はダブルクォートで囲む
-                    if (field.includes(',') || field.includes('\n') || field.includes('"')) {
-                        return `"${field.replace(/"/g, '""')}"`;
-                    }
-                    return field;
+                    let text = String(field);
+                    // 表計算ソフトでユーザーの文章が数式として実行されないようにする。
+                    if (/^\s*[=+\-@]|^[\t\r\n]/.test(text)) text = "'" + text;
+                    return `"${text.replace(/"/g, '""')}"`;
                 });
                 csvContent += escapedRow.join(',') + '\n';
             });
             
-            // ダウンロード
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
-            
-            showStatus('status', '✅ CSVをダウンロードしました', false);
-            closeExportModal();
+            return csvContent;
+            });
         }
 
         // JSON形式でエクスポート
         function exportToJSON() {
+            downloadMemoryExport('json', 'application/json;charset=utf-8', ownMemories => {
             const exportData = {
                 exportDate: new Date().toISOString(),
-                totalMemories: memories.length,
-                memories: memories.map(memory => ({
+                totalMemories: ownMemories.length,
+                memories: ownMemories.map(memory => ({
                     title: memory.title,
                     content: memory.content,
                     category: memory.category,
                     tags: memory.tags,
-                    createdAt: memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toISOString() : null,
+                    createdAt: parseMemoryDate(memory.createdAt)?.toISOString() ?? null,
                     imageUrl: memory.imageUrl
                 }))
             };
             
-            const jsonString = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            
-            showStatus('status', '✅ JSONをダウンロードしました', false);
-            closeExportModal();
+            return JSON.stringify(exportData, null, 2);
+            });
         }
 
         // テキスト形式でエクスポート
         function exportToText() {
+            downloadMemoryExport('txt', 'text/plain;charset=utf-8', ownMemories => {
             let textContent = 'Memory Fragments Export\n';
             textContent += '=' .repeat(50) + '\n';
-            textContent += `Export Date: ${new Date().toLocaleDateString('ja-JP')}\n`;
-            textContent += `Total Memories: ${memories.length}\n`;
+            textContent += `Export Date: ${formatMemoryDate(new Date())}（日本時間）\n`;
+            textContent += `Total Memories: ${ownMemories.length}\n`;
             textContent += '=' .repeat(50) + '\n\n';
             
-            memories.forEach((memory, index) => {
+            ownMemories.forEach((memory, index) => {
                 textContent += `【${index + 1}】 ${memory.title || '無題'}\n`;
                 textContent += '-'.repeat(30) + '\n';
-                textContent += `日付: ${memory.createdAt ? new Date(memory.createdAt.seconds * 1000).toLocaleDateString('ja-JP') : '不明'}\n`;
+                textContent += `日付: ${formatMemoryDate(memory.createdAt)}\n`;
                 textContent += `カテゴリー: ${memory.category || 'その他'}\n`;
-                if (memory.tags && memory.tags.length > 0) {
+                if (Array.isArray(memory.tags) && memory.tags.length > 0) {
                     textContent += `タグ: ${memory.tags.join(', ')}\n`;
                 }
                 textContent += '\n内容:\n';
@@ -2328,14 +2385,8 @@
                 textContent += '\n\n' + '='.repeat(50) + '\n\n';
             });
             
-            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `memory-fragments-${new Date().toISOString().split('T')[0]}.txt`;
-            link.click();
-            
-            showStatus('status', '✅ テキストファイルをダウンロードしました', false);
-            closeExportModal();
+            return textContent;
+            });
         }
 
         // 初期読み込み
