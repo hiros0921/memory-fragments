@@ -236,12 +236,18 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .animate-float,
-            .star,
-            #appIntro *,
-            #demoBanner * {
+            *,
+            *::before,
+            *::after {
                 animation: none !important;
                 transition: none !important;
+                scroll-behavior: auto !important;
+            }
+
+            .animate-float,
+            .star,
+            .transform,
+            [class*="hover:scale-"] {
                 transform: none !important;
             }
         }
@@ -1329,9 +1335,11 @@
                 const item = document.createElement('div');
                 item.className = 'bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 relative group';
                 item.innerHTML = `
-                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="deleteMemory('${memory.id}')" 
-                                class="w-10 h-10 bg-red-600/50 rounded-full flex items-center justify-center hover:bg-red-600 transition-all">
+                    <div class="absolute top-3 right-3 flex gap-2">
+                        <button type="button"
+                                data-memory-delete="${escapeHtml(memory.id)}"
+                                aria-label="${escapeHtml(`「${memory.title}」を削除`)}"
+                                class="min-w-11 min-h-11 bg-red-600/70 rounded-full flex items-center justify-center hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors">
                             ×
                         </button>
                     </div>
@@ -1365,6 +1373,7 @@
                 item.querySelectorAll('[data-private-tag]').forEach(element => {
                     element.addEventListener('click', () => toggleTagFilter(memory.tags[Number(element.dataset.privateTag)]));
                 });
+                item.querySelector('[data-memory-delete]').addEventListener('click', () => deleteMemory(memory.id));
                 item.querySelector('[data-memory-details]').addEventListener('click', () => displaySingleMemory(memory.id));
                 renderPrivatePhoto(item, memory, 'w-full h-48 object-cover rounded-lg mb-4');
             });
@@ -1714,11 +1723,12 @@
             
             // アクティブなフィルターを表示
             const activeFiltersDiv = document.getElementById('activeFilters');
+            activeFiltersDiv.replaceChildren();
             if (activeTagFilters.size > 0) {
-                activeFiltersDiv.innerHTML = '<p style="margin-top: 15px;">フィルター中: ' + 
-                    Array.from(activeTagFilters).join(', ') + '</p>';
-            } else {
-                activeFiltersDiv.innerHTML = '';
+                const activeFiltersText = document.createElement('p');
+                activeFiltersText.style.marginTop = '15px';
+                activeFiltersText.textContent = `フィルター中: ${Array.from(activeTagFilters).join(', ')}`;
+                activeFiltersDiv.appendChild(activeFiltersText);
             }
         }
         
@@ -2009,6 +2019,10 @@
         }
         
         function animate() {
+            if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+                renderer.render(scene, camera);
+                return;
+            }
             requestAnimationFrame(animate);
             
             // パーティクルの回転

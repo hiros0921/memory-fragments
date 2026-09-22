@@ -174,6 +174,59 @@ test('demo add, search, tag filter, details and delete stay in memory', async t 
   assert.equal(new URL(f.window.location.href).searchParams.get('demo'), 'true');
 });
 
+test('active demo tags render as text instead of executable markup', async t => {
+  const f = setupDemo(t, '?demo=true');
+  f.runPageLoad();
+  const unsafeTag = '<svg/onload=alert(1)>';
+  f.fill({
+    title: '安全なタグ表示',
+    content: 'タグは文字として扱います',
+    category: '日常',
+    tags: unsafeTag
+  });
+  await f.run('saveMemory()');
+  f.run(`toggleTagFilter(${JSON.stringify(unsafeTag)})`);
+  const activeFilters = f.document.getElementById('activeFilters');
+  assert.equal(activeFilters.querySelector('svg'), null);
+  assert.match(activeFilters.textContent, /<svg\/onload=alert\(1\)>/);
+});
+
+test('demo delete controls are visible, touch-sized and named for their diary', t => {
+  const f = setupDemo(t, '?demo=true');
+  f.runPageLoad();
+  const firstMemoryTitle = f.run('memories[0].title');
+  const deleteButton = f.document.querySelector('[data-memory-delete]');
+  assert.ok(deleteButton, '一覧に削除操作が必要です');
+  assert.doesNotMatch(deleteButton.parentElement.className, /opacity-0/);
+  assert.match(deleteButton.className, /min-w-11/);
+  assert.match(deleteButton.className, /min-h-11/);
+  assert.equal(deleteButton.getAttribute('aria-label'), `「${firstMemoryTitle}」を削除`);
+});
+
+test('reduced-motion preference prevents the Three.js animation loop', t => {
+  const f = setupDemo(t, '?demo=true');
+  let animationFrames = 0;
+  let renders = 0;
+  f.window.matchMedia = query => ({
+    matches: query === '(prefers-reduced-motion: reduce)',
+    media: query
+  });
+  f.window.requestAnimationFrame = () => {
+    animationFrames += 1;
+  };
+  f.run(`
+    scene = {};
+    camera = {};
+    renderer = { render() { window.__reducedMotionRenders += 1; } };
+    particles = { rotation: { x: 0, y: 0 } };
+  `);
+  f.window.__reducedMotionRenders = renders;
+  f.run('animate()');
+  renders = f.window.__reducedMotionRenders;
+  assert.equal(animationFrames, 0);
+  assert.equal(renders, 1);
+});
+
 test('demo photo is a page-memory data URL and a reload restores three seeds', async t => {
   const f = setupDemo(t, '?demo=true');
   f.runPageLoad();
