@@ -163,6 +163,8 @@ test('demo add, search, tag filter, details and delete stay in memory', async t 
   assert.ok(detailsButton, '一覧から詳細を開く操作が必要です');
   detailsButton.click();
   assert.match(f.document.getElementById('memoriesGrid').textContent, /確認/);
+  assert.match(f.document.getElementById('memoriesGrid').textContent, /デモ用の架空データ/);
+  assert.doesNotMatch(f.document.getElementById('memoriesGrid').textContent, /ログインした本人/);
   f.window.confirm = () => true;
   await f.run(`deleteMemory(${JSON.stringify(id)})`);
   assert.equal(f.run('demoStore.list().length'), 3);

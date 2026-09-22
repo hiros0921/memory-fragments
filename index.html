@@ -1512,7 +1512,9 @@
                             </button>` : ''}
                         
                         <div class="mt-8 pt-6 border-t border-white/20">
-                            <p class="text-sm text-gray-400">この記憶と写真は、ログインした本人だけが閲覧できます。</p>
+                            <p class="text-sm text-gray-400">${isDemoMode
+                                ? 'これはデモ用の架空データです。変更内容は個人用データへ保存されません。'
+                                : 'この記憶と写真は、ログインした本人だけが閲覧できます。'}</p>
                         </div>
                     </div>
                 </div>
