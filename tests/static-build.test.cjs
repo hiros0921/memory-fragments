@@ -16,8 +16,8 @@ test('public build contains the current app and its assets, not backups, rules o
   for (const [, asset] of html.matchAll(/src="\/(js\/[^"?]+)(?:\?[^\"]*)?"/g)) {
     assert.ok(fs.existsSync(path.join(output, asset)), `missing ${asset}`);
   }
-  for (const privatePath of ['app.html', 'index-old.html', 'index-backup.html', 'storage.rules',
-    'firebase-debug.log', 'tests', 'PHOTO_PRIVACY_STATUS.md', 'node_modules', '.git']) {
+  for (const privatePath of ['archive', 'docs', '.github', 'storage.rules',
+    'firebase-debug.log', 'tests', 'node_modules', '.git']) {
     assert.equal(fs.existsSync(path.join(output, privatePath)), false, `must not publish ${privatePath}`);
   }
 });
