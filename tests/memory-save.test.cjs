@@ -78,6 +78,30 @@ test('cloud save remains successful when analytics throws, without a local-only 
   assert.equal(f.button.disabled, false);
 });
 
+test('full capacity preserves the draft without offering checkout or writing a diary',async t=>{
+  const f=setup(t);
+  f.run('memories=Array.from({length:50},(_,i)=>({id:String(i)}));');
+  await f.save();
+  assert.equal(f.writes.length,0);
+  assert.equal(f.el('title').value,'失いたくない日記');
+  assert.equal(f.el('content').value,'写真と一緒に残したい内容');
+  assert.match(f.el('status').textContent,/上限/);
+  assert.match(f.el('status').textContent,/書き出し/);
+  assert.doesNotMatch(f.el('status').textContent,/アップグレード/);
+  assert.equal(f.w.document.querySelector('button[onclick*="Checkout"]'),null);
+  assert.equal(f.button.disabled,false);
+});
+
+test('saving the last available diary shows a non-commercial capacity notice',async t=>{
+  const f=setup(t),notices=[];
+  f.w.Toast={warning:m=>notices.push(m),info:m=>notices.push(m)};
+  f.run("memories=Array.from({length:49},(_,i)=>({id:String(i),userId:'alice',title:'既存',content:'本文',category:'日常',tags:[],createdAt:'2026-09-01T00:00:00Z'}));");
+  await f.save();
+  assert.equal(f.writes.length,1);
+  assert.ok(notices.some(m=>/上限/.test(m)));
+  assert.ok(notices.every(m=>!/アップグレード|購入/.test(m)));
+});
+
 test('cloud failure saves only to this device, clears saved draft and keeps legacy records intact', async t => {
   const f = setup(t, { rejectCloud: true });
   const legacy = JSON.stringify([{ id: 'old', userId: 'alice', title: '既存の日記',
