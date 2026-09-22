@@ -3,8 +3,24 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // ユーザードキュメントへのアクセス
     match /users/{userId} {
-      // 自分のデータのみ読み書き可能
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      // Current and legacy entitlement fields are maintained only by trusted
+      // server code (Admin SDK), never by browser profile writes.
+      function billingFields() {
+        return ['isPremium', 'plan', 'maxMemories', 'subscriptionStatus',
+                'stripeCustomerId', 'stripeSubscriptionId',
+                'premiumStartDate', 'premiumEndDate'];
+      }
+      allow read: if isOwner();
+      allow create: if isOwner()
+        && !request.resource.data.keys().hasAny(billingFields());
+      allow update: if isOwner()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingFields());
+      // A parent delete would erase billing links. Diary deletion remains
+      // separately permitted below; account erasure requires a server workflow.
+      allow delete: if false;
       
       // memoriesサブコレクション
       match /memories/{memoryId} {

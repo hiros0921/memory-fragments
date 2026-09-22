@@ -753,6 +753,7 @@
                 document.getElementById(id)?.classList.add('hidden');
             }
             currentUser = user;
+            isPremium = false;
             
             // URLパラメータをチェック
             const urlParams = new URLSearchParams(window.location.search);
@@ -795,7 +796,11 @@
         
         // プレミアムステータスをチェック
         async function checkPremiumStatus(uid) {
-            isPremium = await premiumService.getOrCreatePremiumStatus(uid);
+            const user = currentUser;
+            if (!user || user.uid !== uid || auth.currentUser !== user) return;
+            const status = await premiumService.getPremiumStatus(uid);
+            if (currentUser !== user || auth.currentUser !== user) return;
+            isPremium = status;
             updatePremiumUI();
         }
         
@@ -1628,30 +1633,21 @@
             }
         }
         
-        // URLパラメータをチェックして決済結果を処理
+        // URLは誰でも変更できるため、支払いや会員資格の証明には使わない。
         function checkPaymentResult() {
-            const urlParams = new URLSearchParams(window.location.search);
+            const url = new URL(window.location.href);
+            const urlParams = url.searchParams;
             
             if (urlParams.get('success') === 'true') {
-                // 決済成功
-                Toast.success('プレミアムプランへのアップグレードが完了しました！', { title: 'アップグレード完了', duration: 6000 });
-                // プレミアムステータスを更新
-                if (currentUser) {
-                    db.collection('users').doc(currentUser.uid).update({
-                        isPremium: true,
-                        premiumStartDate: firebase.firestore.FieldValue.serverTimestamp()
-                    }).then(() => {
-                        isPremium = true;
-                        updatePremiumUI();
-                    });
-                }
-                // URLパラメータをクリア
-                window.history.replaceState({}, '', window.location.pathname);
+                Toast.info('決済画面から戻りました。会員状態はサーバー側の確認結果を反映します。反映されない場合は、しばらくしてから再読み込みしてください。', { duration: 6000 });
             } else if (urlParams.get('canceled') === 'true') {
                 // 決済キャンセル
                 Toast.info('決済がキャンセルされました。');
-                // URLパラメータをクリア
-                window.history.replaceState({}, '', window.location.pathname);
+            }
+            if (urlParams.has('success') || urlParams.has('canceled')) {
+                urlParams.delete('success');
+                urlParams.delete('canceled');
+                window.history.replaceState({}, '', url.pathname + url.search + url.hash);
             }
         }
         

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Memory Fragments - Personal Memory Archive App",
   "scripts": {
-    "test": "firebase emulators:exec --project demo-memory-fragments --config firebase.test.json --only storage \"node --test tests/*.test.cjs\"",
+    "test": "firebase emulators:exec --project demo-memory-fragments --config firebase.test.json --only firestore,storage \"node --test tests/*.test.cjs\"",
     "dev": "echo 'This is a static site, no build needed'",
     "build": "node scripts/build-static.cjs",
     "preview": "echo 'Use a local server to preview'"
