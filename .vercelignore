@@ -34,3 +34,13 @@
 !js/app/services/premium-service.js
 !js/app/services/image-service.js
 !js/app/services/location-service.js
+!js/app/demo
+/js/app/demo/*
+!js/app/demo/demo-memory-store.js
+!assets
+/assets/*
+!assets/demo
+/assets/demo/*
+!assets/demo/demo-sunset.png
+!assets/demo/demo-cafe.png
+!assets/demo/demo-goal.png

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const { execFileSync } = require('node:child_process');
 
 test('public build contains the current app and its assets, not backups, rules or logs', () => {
   assert.ok(fs.existsSync('scripts/build-static.cjs'), 'a public asset allowlist build is required');
@@ -98,4 +99,20 @@ test('public build includes only local demo code and three generated images', ()
     'utf8'
   );
   assert.doesNotMatch(source, /https?:\/\//);
+});
+
+test('Vercel upload rules include every public demo asset needed by the build', () => {
+  const ignored = new Set(execFileSync('git', [
+    'ls-files',
+    '--cached',
+    '--ignored',
+    '--exclude-from=.vercelignore'
+  ], { encoding: 'utf8' }).trim().split('\n').filter(Boolean));
+  const requiredDemoAssets = [
+    'js/app/demo/demo-memory-store.js',
+    'assets/demo/demo-sunset.png',
+    'assets/demo/demo-cafe.png',
+    'assets/demo/demo-goal.png'
+  ];
+  assert.deepEqual(requiredDemoAssets.filter(asset => ignored.has(asset)), []);
 });
