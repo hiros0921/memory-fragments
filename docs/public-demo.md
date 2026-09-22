@@ -36,8 +36,28 @@ npm test
 npm run build
 ```
 
-最終確認では、通常画面とデモ画面をデスクトップ幅および390×844で表示し、デモの追加・写真添付・検索・絞り込み・詳細・削除・再読み込みを確認します。また、デモ中に個人情報と非公開機能が表示されず、外部データサービスへ接触しないことを確認します。
+最終確認では、通常画面とデモ画面をデスクトップ幅、390×844、360×800で表示しました。追加・写真添付・検索・カテゴリー／タグ絞り込み・詳細・再読み込みを本番画面で確認し、削除は自動テストで確認しています。デモ中に個人情報、ログイン、位置情報、書き出し、課金の各機能が表示されず、Firebaseや位置情報を起動しないことも自動テストで確認しました。
 
 ## 本番反映記録
 
-本番反映後に、Gitコミット、VercelデプロイID、デプロイURL、確認結果をここへ追記します。
+- 反映日: 2026-09-22
+- 公開デモ実装コミット: `e07655a61fb36274880f7708ae8cd5ba07cf23c5`
+- GitHub PR: https://github.com/hiros0921/memory-fragments/pull/6
+- VercelデプロイID: `dpl_3So3sKVNc4ze9sm5YszPwgvd55f1`
+- デプロイURL: https://memory-fragments-v2-n1f81ro1y-hiroyuki-suwas-projects.vercel.app
+- 本番URL: https://www.memory-fragments.com/?demo=true
+- ロールバック先: `dpl_7tPEwcpU3A6tCJhwPr6SND5LsXjM`
+
+確認結果:
+
+- `npm test`: 165件すべて成功
+- `npm run build`: 公開対象25ファイルを生成
+- GitHub連携のVercelプレビュー3件: すべて成功
+- 本番のHTML、デモ用JavaScript、画像3枚: 検証済み`dist`とSHA-256が一致
+- 通常画面、デモ画面、デモ用JavaScript、画像3枚: すべてHTTP 200
+- 本番操作: 日記追加、写真添付、検索、カテゴリー／タグ絞り込み、詳細、再読み込みリセットを確認
+- 390×844: viewport 390px、scrollWidth 382px、削除ボタン44×44px
+- 360×800: viewport 360px、scrollWidth 352px、カード右端336px
+- 本番ブラウザのコンソールエラー: 0件
+- 購入・アップグレード・決済の表示: なし
+- Firebaseルール、Storageルール、Cloud Functions: デプロイしていない
