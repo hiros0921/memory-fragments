@@ -1,44 +1,39 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // memoriesフォルダへのアクセスルール
-    match /memories/{memoryId}/{allPaths=**} {
-      // 読み取りは認証されたユーザーのみ（セキュリティ向上）
-      allow read: if request.auth != null;
-      // 書き込みは認証されたユーザーのみ
-      allow write: if request.auth != null 
-        && request.resource.size < 10 * 1024 * 1024  // 10MB以下
-        && request.resource.contentType.matches('image/.*'); // 画像のみ
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
-    
-    // ユーザー別の画像フォルダ
+
+    function isImageUnder(bytes) {
+      return request.resource.size < bytes
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Current uploads use memories/{uid}/... (not a diary ID).
+    // Legacy diary-ID folders require an ownership audit before migration.
+    match /memories/{userId}/{allPaths=**} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isImageUnder(10 * 1024 * 1024);
+    }
+
     match /images/{userId}/{allPaths=**} {
-      // 読み取りは認証されたユーザーなら誰でも可能（共有機能のため）
-      allow read: if request.auth != null;
-      // 書き込みは自分のフォルダのみ
-      allow write: if request.auth != null 
-        && request.auth.uid == userId
-        && request.resource.size < 10 * 1024 * 1024  // 10MB以下
-        && request.resource.contentType.matches('image/.*'); // 画像のみ
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isImageUnder(10 * 1024 * 1024);
     }
-    
-    // プロフィール画像
+
+    // Profiles are private too: this app no longer exposes public photos.
     match /profiles/{userId}/{fileName} {
-      // プロフィール画像は誰でも見れる
-      allow read: if true;
-      // 本人のみアップロード可能
-      allow write: if request.auth != null 
-        && request.auth.uid == userId
-        && request.resource.size < 5 * 1024 * 1024  // 5MB以下
-        && request.resource.contentType.matches('image/.*'); // 画像のみ
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && isImageUnder(5 * 1024 * 1024);
     }
-    
-    // 共有された画像（公開リンク用）
+
+    // Retired sharing path. Preserve stored objects; do not publish them.
     match /shared/{shareId}/{allPaths=**} {
-      // 共有画像は誰でも見れる
-      allow read: if true;
-      // 書き込みは不可
-      allow write: if false;
+      allow read, write: if false;
     }
     
     // デフォルトルール（その他のパスへのアクセスを拒否）

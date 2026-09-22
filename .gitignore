@@ -17,3 +17,6 @@ dist/
 
 # macOS
 .DS_Store
+
+# Local security tests and CLI diagnostics (never publish these)
+*-debug.log*
