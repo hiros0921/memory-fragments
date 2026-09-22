@@ -45,6 +45,18 @@ test('owner grid shows an authenticated blob, never the stored bearer URL or sha
   assert.equal(grid.querySelector('[onclick^="shareMemory"]'), null);
 });
 
+test('signed-in quote-bearing titles remain inert in action attributes', t => {
+  const { window, run, grid } = setup(t);
+  const title = 'safe" onclick="window.__reviewInjected=1" data-unused="';
+  window.fixture.title = title;
+  run('currentUser = auth.currentUser; memories = [window.fixture]; displayMemories();');
+
+  const deleteButton = grid.querySelector('[data-memory-delete]');
+  assert.equal(deleteButton.getAttribute('aria-label'), `「${title}」を削除`);
+  assert.equal(deleteButton.getAttribute('onclick'), null);
+  assert.equal(window.__reviewInjected, undefined);
+});
+
 test('unauthenticated single-memory links never expose a cached private photo', async t => {
   const { window, run, grid, auth, authCallback } = setup(t, '?id=photo');
   window.localStorage.setItem('memories', JSON.stringify([window.fixture]));

@@ -1337,8 +1337,8 @@
                 item.innerHTML = `
                     <div class="absolute top-3 right-3 flex gap-2">
                         <button type="button"
-                                data-memory-delete="${escapeHtml(memory.id)}"
-                                aria-label="${escapeHtml(`「${memory.title}」を削除`)}"
+                                data-memory-delete
+                                aria-label="記憶を削除"
                                 class="min-w-11 min-h-11 bg-red-600/70 rounded-full flex items-center justify-center hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors">
                             ×
                         </button>
@@ -1364,7 +1364,7 @@
                             📍 位置情報あり (クリックで地図を開く)
                         </button>` : ''}
                     <button type="button"
-                            data-memory-details="${escapeHtml(memory.id)}"
+                            data-memory-details
                             class="mt-4 min-h-11 w-full rounded-lg border border-purple-300/40 bg-purple-700/30 px-4 py-2 font-semibold text-purple-100 hover:bg-purple-600/40 transition-colors">
                         詳細を見る
                     </button>
@@ -1373,8 +1373,13 @@
                 item.querySelectorAll('[data-private-tag]').forEach(element => {
                     element.addEventListener('click', () => toggleTagFilter(memory.tags[Number(element.dataset.privateTag)]));
                 });
-                item.querySelector('[data-memory-delete]').addEventListener('click', () => deleteMemory(memory.id));
-                item.querySelector('[data-memory-details]').addEventListener('click', () => displaySingleMemory(memory.id));
+                const deleteButton = item.querySelector('[data-memory-delete]');
+                deleteButton.dataset.memoryDelete = String(memory.id);
+                deleteButton.setAttribute('aria-label', `「${memory.title}」を削除`);
+                deleteButton.addEventListener('click', () => deleteMemory(memory.id));
+                const detailsButton = item.querySelector('[data-memory-details]');
+                detailsButton.dataset.memoryDetails = String(memory.id);
+                detailsButton.addEventListener('click', () => displaySingleMemory(memory.id));
                 renderPrivatePhoto(item, memory, 'w-full h-48 object-cover rounded-lg mb-4');
             });
         }
@@ -1492,7 +1497,7 @@
             const grid = document.getElementById('memoriesGrid');
             grid.innerHTML = `
                 <div class="max-w-2xl mx-auto">
-                    <button onclick="goBackToHome()" 
+                    <button type="button" data-memory-back
                             class="mb-6 px-4 py-2 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
                         ← すべての記憶に戻る
                     </button>
@@ -1528,6 +1533,7 @@
                     </div>
                 </div>
             `;
+            grid.querySelector('[data-memory-back]').addEventListener('click', goBackToHome);
             renderPrivatePhoto(grid, memory, 'w-full rounded-lg mb-6 shadow-lg');
         }
         
@@ -1538,12 +1544,13 @@
             grid.innerHTML = `
                 <div class="text-center py-20">
                     <p class="text-2xl text-gray-400 mb-4">記憶が見つかりませんでした</p>
-                    <button onclick="goBackToHome()" 
+                    <button type="button" data-memory-back
                             class="px-6 py-3 bg-purple-600/50 rounded-lg hover:bg-purple-600 transition-all">
                         トップページに戻る
                     </button>
                 </div>
             `;
+            grid.querySelector('[data-memory-back]').addEventListener('click', goBackToHome);
         }
         
         // ホームに戻る（モバイル対応版）
@@ -1552,6 +1559,11 @@
             const style = document.querySelector('style');
             if (style && style.textContent.includes('#authSection, #uploadSection')) {
                 style.remove();
+            }
+
+            if (isDemoMode) {
+                returnToAllMemories();
+                return;
             }
             
             // URLパラメータを削除してページを再読み込み（より確実な方法）
@@ -1574,6 +1586,9 @@
                 
                 const searchSection = document.getElementById('searchSection');
                 if (searchSection) searchSection.style.display = 'block';
+
+                const filterSection = document.getElementById('filterSection');
+                if (filterSection) filterSection.style.display = '';
                 
                 const statsSection = document.getElementById('statsSection');
                 if (statsSection) statsSection.style.display = 'block';
@@ -2429,7 +2444,12 @@
             }
             loadCustomSettings();
             generateStars();
-            init3DScene();
+            try {
+                init3DScene();
+            } catch (error) {
+                // The animated background is decorative; the diary must remain usable without WebGL.
+                console.warn('Decorative 3D scene unavailable', error?.name || 'Error');
+            }
             
             // URLパラメータを最初にチェック
             const urlParams = new URLSearchParams(window.location.search);

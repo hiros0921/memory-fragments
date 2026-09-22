@@ -91,6 +91,14 @@ function setupDemo(t, query = '?demo=true') {
       run('generateStars = () => {}; init3DScene = () => {}; checkPaymentResult = () => {};');
       onload();
     },
+    runPageLoadWith3DFailure() {
+      run(`
+        generateStars = () => {};
+        init3DScene = () => { throw new Error('webgl unavailable'); };
+        checkPaymentResult = () => {};
+      `);
+      onload();
+    },
     fill({ title, content, category, tags }) {
       window.document.getElementById('title').value = title;
       window.document.getElementById('content').value = content;
@@ -172,6 +180,45 @@ test('demo add, search, tag filter, details and delete stay in memory', async t 
   assert.equal(f.calls.analytics, 0);
   f.run('returnToAllMemories()');
   assert.equal(new URL(f.window.location.href).searchParams.get('demo'), 'true');
+});
+
+test('quote-bearing demo titles cannot create executable button attributes', async t => {
+  const f = setupDemo(t, '?demo=true');
+  f.runPageLoad();
+  const title = 'safe" onclick="window.__reviewInjected=1" data-unused="';
+  f.fill({ title, content: '属性として実行しない', category: '日常', tags: '' });
+  await f.run('saveMemory()');
+
+  const deleteButton = f.document.querySelector('[data-memory-delete]');
+  assert.equal(deleteButton.getAttribute('aria-label'), `「${title}」を削除`);
+  assert.equal(deleteButton.getAttribute('onclick'), null);
+  assert.equal(f.window.__reviewInjected, undefined);
+});
+
+test('returning from demo details preserves in-session additions and controls', async t => {
+  const f = setupDemo(t, '?demo=true');
+  f.runPageLoad();
+  f.fill({ title: '戻っても残る日記', content: 'ページ内に保持', category: '日常', tags: '' });
+  await f.run('saveMemory()');
+  const id = f.run('memories[0].id');
+  f.document.querySelector(`[data-memory-details="${id}"]`).click();
+
+  const backButton = f.document.querySelector('[data-memory-back]');
+  assert.ok(backButton, '詳細画面の戻る操作が必要です');
+  backButton.click();
+
+  assert.equal(f.run('demoStore.list().length'), 4);
+  assert.match(f.document.getElementById('memoriesGrid').textContent, /戻っても残る日記/);
+  assert.equal(f.document.getElementById('uploadSection').style.display, 'block');
+  assert.notEqual(f.document.getElementById('filterSection').style.display, 'none');
+});
+
+test('decorative WebGL failure does not block demo startup', t => {
+  const f = setupDemo(t, '?demo=true');
+  assert.doesNotThrow(() => f.runPageLoadWith3DFailure());
+  assert.equal(f.run('memories.length'), 3);
+  assert.equal(f.document.getElementById('demoBanner').classList.contains('hidden'), false);
+  assert.equal(f.document.querySelectorAll('#memoriesGrid > div').length, 3);
 });
 
 test('active demo tags render as text instead of executable markup', async t => {
