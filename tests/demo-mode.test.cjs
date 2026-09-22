@@ -137,4 +137,66 @@ test('a real diary id in demo never falls back to Firestore', t => {
   assert.equal(f.calls.firestore, 0);
 });
 
+test('demo add, search, tag filter, details and delete stay in memory', async t => {
+  const f = setupDemo(t, '?demo=true');
+  f.runPageLoad();
+  f.fill({
+    title: '<img src=x onerror=alert(1)>',
+    content: '<script>bad()</script>',
+    category: '日常',
+    tags: '確認 安全'
+  });
+  await f.run('saveMemory()');
+  assert.equal(f.run('memories.length'), 4);
+  assert.equal(f.document.querySelector('#memoriesGrid script'), null);
+  assert.match(
+    f.document.getElementById('memoriesGrid').textContent,
+    /<script>bad\(\)<\/script>/
+  );
+  f.document.getElementById('searchText').value = 'bad';
+  f.run('applyFilters()');
+  assert.match(f.document.getElementById('memoriesGrid').textContent, /1件の記憶/);
+  f.run('resetSearch(); toggleTagFilter("安全")');
+  assert.match(f.document.getElementById('memoriesGrid').textContent, /1件の記憶/);
+  const id = f.run('memories[0].id');
+  f.run(`displaySingleMemory(${JSON.stringify(id)})`);
+  assert.match(f.document.getElementById('memoriesGrid').textContent, /確認/);
+  f.window.confirm = () => true;
+  await f.run(`deleteMemory(${JSON.stringify(id)})`);
+  assert.equal(f.run('demoStore.list().length'), 3);
+  assert.equal(f.calls.firestore, 0);
+  assert.equal(f.calls.analytics, 0);
+  f.run('returnToAllMemories()');
+  assert.equal(new URL(f.window.location.href).searchParams.get('demo'), 'true');
+});
+
+test('demo photo is a page-memory data URL and a reload restores three seeds', async t => {
+  const f = setupDemo(t, '?demo=true');
+  f.runPageLoad();
+  f.fill({ title: '写真テスト', content: '本文', category: '日常', tags: '' });
+  f.attachFile(new f.window.File(['image'], 'sample.png', { type: 'image/png' }));
+  await f.run('saveMemory()');
+  assert.match(f.run('memories[0].demoImageUrl'), /^data:image\/png;base64,/);
+  assert.equal(f.window.localStorage.getItem('memories:alice'), 'private-sentinel');
+  const fresh = setupDemo(t, '?demo=true');
+  fresh.runPageLoad();
+  assert.equal(fresh.run('memories.length'), 3);
+});
+
+test('invalid and oversized demo photos retain the draft and do not add a memory', async t => {
+  for (const input of [
+    { bytes: new Uint8Array(4), name: 'note.txt', type: 'text/plain' },
+    { bytes: new Uint8Array(5_000_001), name: 'large.png', type: 'image/png' }
+  ]) {
+    const f = setupDemo(t, '?demo=true');
+    f.runPageLoad();
+    f.fill({ title: '残す下書き', content: '消さない本文', category: '日常', tags: '' });
+    f.attachFile(new f.window.File([input.bytes], input.name, { type: input.type }));
+    await f.run('saveMemory()');
+    assert.equal(f.run('memories.length'), 3);
+    assert.equal(f.document.getElementById('title').value, '残す下書き');
+    assert.match(f.document.getElementById('status').textContent, /画像|サイズ/);
+  }
+});
+
 module.exports = { setupDemo };

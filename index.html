@@ -859,9 +859,73 @@
                 throw error;
             }
         }
+
+        function readDemoImage(file) {
+            if (!file) return Promise.resolve(null);
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                return Promise.reject(new Error('JPEG、PNG、WebP形式の画像を選択してください'));
+            }
+            if (file.size > 5000000) {
+                return Promise.reject(new Error('デモでは5MB以下の画像を選択してください'));
+            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('画像を読み込めませんでした'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function saveDemoMemory() {
+            if (activeMemorySave) return;
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const category = document.getElementById('category').value;
+            const tags = document.getElementById('tags').value.trim().split(/\s+/).filter(Boolean);
+            const imageFile = document.getElementById('imageFile').files[0];
+            const validation = memoryService.validateMemoryInput({ title, content, category });
+            if (!validation.ok) {
+                showStatus('status', validation.message, true, 0);
+                return;
+            }
+
+            const operation = {
+                cancelled: false,
+                releaseUI() {
+                    if (activeMemorySave === operation) activeMemorySave = null;
+                }
+            };
+            activeMemorySave = operation;
+            try {
+                const demoImageUrl = await readDemoImage(imageFile);
+                const stored = demoStore.add({
+                    userId: demoUser.uid,
+                    title,
+                    content,
+                    category,
+                    tags,
+                    createdAt: new Date().toISOString(),
+                    ...(demoImageUrl ? {
+                        demoImageUrl,
+                        demoImageAlt: `デモで追加した画像：${title}`
+                    } : {})
+                });
+                memories = demoStore.list();
+                clearForm();
+                displayMemories();
+                showStatus('status', '✅ デモに追加しました。再読み込みすると消えます。', false, 0);
+                return stored;
+            } catch (error) {
+                showStatus('status', `❌ ${error.message}`, true, 0);
+                return null;
+            } finally {
+                operation.releaseUI();
+            }
+        }
         
         // 記憶を保存。永続化の失敗と、保存後の表示・計測の失敗を分ける。
         async function saveMemory() {
+            if (isDemoMode) return saveDemoMemory();
             if (activeMemorySave) return;
             const operation = { cancelled: false };
             const savingUser = currentUser;
@@ -1225,7 +1289,7 @@
                                 </span>
                             `).join('')}
                         </div>` : ''}
-                    ${memory.imageUrl || memory.imageData ?
+                    ${memory.imageUrl || memory.imageData || memory.demoImageUrl ?
                         `<div data-private-photo class="mb-4 text-sm text-gray-400">写真を読み込み中…</div>` : ''}
                     ${memory.location ? 
                         `<button onclick="openMap(${memory.location.lat}, ${memory.location.lng})" 
@@ -1243,6 +1307,13 @@
         
         // 記憶を削除
         async function deleteMemory(id) {
+            if (isDemoMode) {
+                if (!confirm('このデモ記憶を削除しますか？')) return;
+                demoStore.remove(id);
+                memories = demoStore.list();
+                displayMemories();
+                return;
+            }
             const user = currentUser;
             if (!user || auth.currentUser !== user) return;
             if (!confirm('この記憶を削除しますか？')) return;
@@ -1279,6 +1350,25 @@
         async function renderPrivatePhoto(container, memory, className) {
             const placeholder = container.querySelector('[data-private-photo]');
             if (!placeholder) return;
+            if (isDemoMode) {
+                if (!isCurrentMemoryOwner(memory) || !memory.demoImageUrl) {
+                    placeholder.textContent = 'デモ画像を表示できませんでした。';
+                    return;
+                }
+                const image = document.createElement('img');
+                image.alt = memory.demoImageAlt || 'デモ用合成画像';
+                image.className = className;
+                image.addEventListener('error', () => {
+                    if (!image.isConnected) return;
+                    const message = document.createElement('div');
+                    message.className = 'mb-4 text-sm text-gray-400';
+                    message.textContent = 'デモ画像を表示できませんでした。';
+                    image.replaceWith(message);
+                }, { once: true });
+                image.src = memory.demoImageUrl;
+                placeholder.replaceWith(image);
+                return;
+            }
             const user = currentUser;
             try {
                 const src = await imageService.loadPrivateImage(memory, user);
@@ -1347,7 +1437,7 @@
                                 ).join('')}
                             </div>` : ''}
                         
-                        ${memory.imageUrl || memory.imageData ? 
+                        ${memory.imageUrl || memory.imageData || memory.demoImageUrl ?
                             `<div data-private-photo class="mb-6 text-sm text-gray-400">写真を読み込み中…</div>` : ''}
                         
                         ${memory.location ? 
