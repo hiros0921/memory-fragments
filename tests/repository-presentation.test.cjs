@@ -12,3 +12,14 @@ test('portfolio screenshots are valid non-empty PNG files', () => {
     assert.ok(data.length > 20_000, `${image} must contain a readable screenshot`);
   }
 });
+
+test('README embeds at least two existing local screenshots', () => {
+  const readme = fs.readFileSync('README.md', 'utf8');
+  const localImages = [...readme.matchAll(/!\[[^\]]*\]\((docs\/images\/[^)]+\.png)\)/g)]
+    .map(([, image]) => image);
+
+  assert.ok(localImages.length >= 2, 'README must show desktop and mobile screenshots');
+  for (const image of localImages) {
+    assert.ok(fs.existsSync(image), `README image link must resolve: ${image}`);
+  }
+});
