@@ -454,13 +454,6 @@ class AIEmotionAnalyzer {
                     </div>
                 ` : ''}
 
-                ${!isPremium ? `
-                    <div class="upgrade-prompt mt-4 p-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg">
-                        <p class="text-xs text-gray-300">
-                            🌟 プレミアムにアップグレードして、より詳細な感情分析とインサイトを取得しましょう
-                        </p>
-                    </div>
-                ` : ''}
             </div>
         `;
     }

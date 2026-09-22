@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const {JSDOM}=require('jsdom');
 
-function setup(t,{query='',profile={isPremium:false},exists=true,readError=false}={}) {
+function setup(t,{query='',profile={isPremium:false},exists=true,readError=false,noPaymentSDK=false}={}) {
   const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'https://www.memory-fragments.com/'+query,runScripts:'outside-only'});
   t.after(()=>dom.window.close());
   const w=dom.window, writes=[], notices=[];
@@ -17,16 +17,17 @@ function setup(t,{query='',profile={isPremium:false},exists=true,readError=false
   w.firebase={initializeApp(){},auth:()=>auth,storage:()=>({}),firestore:()=>db,functions:()=>({})};
   w.firebase.firestore.FieldValue={serverTimestamp:()=>({timestamp:true})};
   w.Stripe=()=>({});
+  if(noPaymentSDK){delete w.Stripe;delete w.firebase.functions;}
   w.fetch=async()=>{throw Error('Unexpected network');};
   w.Toast={success:m=>notices.push({type:'success',m}),info:m=>notices.push({type:'info',m}),error:m=>notices.push({type:'error',m})};
   const ctx=dom.getInternalVMContext();
   for(const name of ['memory-repository','memory-service','premium-service','image-service','location-service'])
     vm.runInContext(fs.readFileSync(`js/app/services/${name}.js`,'utf8'),ctx);
   vm.runInContext([...w.document.querySelectorAll('script:not([src])')].at(-1).textContent,ctx);
-  w.onload=null;
+  const onload=w.onload; w.onload=null;
   const run=s=>vm.runInContext(s,ctx);
   run('currentUser=auth.currentUser;');
-  return {w,run,writes,notices,auth,
+  return {w,run,writes,notices,auth,onload,
     pauseRead(){db.collection=()=>({doc:()=>({get:()=>new Promise(r=>{finish=r;})})});},
     finishRead(){finish({exists:true,data:()=>({isPremium:true})});}};
 }
@@ -78,4 +79,31 @@ test('logout clears the in-memory paid state',t=>{
   const f=setup(t);f.run('isPremium=true;');
   f.auth.currentUser=null;f.auth.callback(null);
   assert.equal(f.run('isPremium'),false);
+});
+
+test('portfolio login/status works without loading either payment SDK',async t=>{
+  const f=setup(t,{noPaymentSDK:true});
+  await f.run("checkPremiumStatus('alice')");
+  assert.equal(f.run('isPremium'),false);
+  assert.equal(f.writes.length,0);
+});
+test('capacity UI never offers a purchase at low, near-limit, or full usage',t=>{
+  const f=setup(t);
+  for(const count of [0,25,49,50]){
+    f.run(`memories=Array.from({length:${count}},()=>({})); updatePremiumUI();`);
+    const controls=[...f.w.document.querySelectorAll('button,a')];
+    assert.equal(controls.some(e=>/容量を増やす|アップグレード|無料で試す/.test(e.textContent)),false);
+    assert.equal(f.w.document.getElementById('storageProgressBar').style.width,`${count*2}%`);
+  }
+});
+test('old upgrade URL no longer opens a purchase dialog',t=>{
+  const f=setup(t,{query:'?upgrade=true&id=keep#detail'});
+  // Visual animation is outside this test; execute the real URL and event setup.
+  f.run('generateStars=()=>{}; init3DScene=()=>{};');
+  const timers=[];f.w.setTimeout=fn=>{timers.push(fn);return timers.length;};
+  f.onload();for(const fn of timers)fn();
+  assert.equal(f.w.document.querySelector('[role="dialog"] button[onclick*="Checkout"]'),null);
+  assert.equal(f.writes.length,0);
+  assert.equal(f.run('isPremium'),false);
+  assert.equal(new URL(f.w.location.href).searchParams.get('id'),'keep');
 });

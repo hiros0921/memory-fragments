@@ -41,3 +41,28 @@ test('retirement service worker does not cache pages/photos or erase diary stora
   assert.deepEqual(deleted.sort(), ['memory-fragments-v1', 'memory-fragments-v2']);
   assert.equal(unregistered, true);
 });
+
+test('published app loads no payment SDK or archived checkout reference',()=>{
+  const {JSDOM}=require('jsdom');
+  const {buildStatic}=require('../scripts/build-static.cjs');
+  const output=fs.mkdtempSync(path.join(os.tmpdir(),'memory-fragments-portfolio-'));
+  buildStatic(output);
+  const dom=new JSDOM(fs.readFileSync(path.join(output,'index.html'),'utf8'));
+  try{
+    const sources=[...dom.window.document.querySelectorAll('script[src]')].map(s=>s.getAttribute('src'));
+    assert.ok(sources.every(s=>!/stripe\.com|firebase-functions|checkout-reference/.test(s)));
+    assert.equal(fs.existsSync(path.join(output,'examples/checkout-reference.js')),false);
+    assert.equal(fs.existsSync(path.join(output,'functions/index.js')),false);
+    assert.match(dom.window.document.body.textContent,/実績紹介用/);
+    assert.match(dom.window.document.body.textContent,/新規課金の受付.*行っていません/);
+  }finally{dom.window.close();}
+});
+
+test('emotion analysis output does not sell an upgrade',()=>{
+  const vm=require('vm');
+  const ctx=vm.createContext({console});
+  vm.runInContext(fs.readFileSync('js/ai-emotion-analyzer.js','utf8'),ctx);
+  const html=vm.runInContext("aiEmotionAnalyzer.createAnalysisUI(aiEmotionAnalyzer.performBasicAnalysis('今日は楽しくて嬉しい一日でした'))",ctx);
+  assert.match(html,/AI感情分析/);
+  assert.doesNotMatch(html,/アップグレード|購入/);
+});
