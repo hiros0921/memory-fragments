@@ -159,7 +159,9 @@ test('demo add, search, tag filter, details and delete stay in memory', async t 
   f.run('resetSearch(); toggleTagFilter("安全")');
   assert.match(f.document.getElementById('memoriesGrid').textContent, /1件の記憶/);
   const id = f.run('memories[0].id');
-  f.run(`displaySingleMemory(${JSON.stringify(id)})`);
+  const detailsButton = f.document.querySelector(`[data-memory-details="${id}"]`);
+  assert.ok(detailsButton, '一覧から詳細を開く操作が必要です');
+  detailsButton.click();
   assert.match(f.document.getElementById('memoriesGrid').textContent, /確認/);
   f.window.confirm = () => true;
   await f.run(`deleteMemory(${JSON.stringify(id)})`);
