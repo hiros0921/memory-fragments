@@ -63,13 +63,15 @@
         }
 
         const imageData = await this.imageService.toBase64(resizedFile);
-        return imageData ? { ...memory, imageData } : memory;
+        if (!imageData) throw new Error('画像を読み込めませんでした');
+        return { ...memory, imageData };
       } catch (error) {
         console.error('画像処理エラー:', error);
         try {
           const { file: resizedFile } = await this.imageService.resizeImage(imageFile);
           const imageData = await this.imageService.toBase64(resizedFile);
-          return imageData ? { ...memory, imageData } : memory;
+          if (!imageData) throw new Error('画像を読み込めませんでした');
+          return { ...memory, imageData };
         } catch (resizeError) {
           console.error('リサイズエラー:', resizeError);
           throw new Error('画像の処理に失敗しました');

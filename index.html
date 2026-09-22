@@ -350,12 +350,12 @@
                         </div>
                     </div>
                     
-                    <button onclick="saveMemory()" 
+                    <button id="saveMemoryButton" onclick="saveMemory()"
                             class="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg font-semibold text-lg hover:from-purple-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
                         💾 記憶を保存
                     </button>
                     
-                    <div id="status"></div>
+                    <div id="status" role="status" aria-live="polite"></div>
                 </div>
             </div>
         </div>
@@ -704,6 +704,9 @@
         
         let currentUser = null;
         let memories = [];
+        let activeMemorySave = null;
+        let memoryListRevision = 0;
+        let memorySaveAttempt = 0;
         let allTags = new Set();
         let activeTagFilters = new Set();
         let isPremium = false; // プレミアムステータス
@@ -728,6 +731,16 @@
         
         // 認証状態の監視
         auth.onAuthStateChanged((user) => {
+            if (currentUser !== user) {
+                const status = document.getElementById('status');
+                clearTimeout(status.statusTimeout);
+                status.textContent = '';
+                status.className = '';
+            }
+            if (currentUser !== user && activeMemorySave) {
+                activeMemorySave.cancelled = true;
+                activeMemorySave.releaseUI();
+            }
             if (currentUser && currentUser !== user) clearForm();
             activeTagFilters.clear();
             allTags.clear();
@@ -897,10 +910,12 @@
             }
         }
         
-        // 記憶を保存
+        // 記憶を保存。永続化の失敗と、保存後の表示・計測の失敗を分ける。
         async function saveMemory() {
+            if (activeMemorySave) return;
+            const operation = { cancelled: false };
             const savingUser = currentUser;
-            const sameUser = () => savingUser && currentUser === savingUser && auth.currentUser === savingUser;
+            const sameUser = () => !operation.cancelled && savingUser && currentUser === savingUser && auth.currentUser === savingUser;
             const title = document.getElementById('title').value;
             const content = document.getElementById('content').value;
             const category = document.getElementById('category').value;
@@ -926,81 +941,120 @@
                 return;
             }
 
+            const button = document.getElementById('saveMemoryButton');
+            const controls = ['title', 'content', 'category', 'tags', 'imageFile', 'locationPermission']
+                .map(id => document.getElementById(id));
+            const disabledBefore = controls.map(el => el.disabled);
+            const buttonText = button.textContent;
+            operation.releaseUI = () => {
+                if (activeMemorySave !== operation) return;
+                activeMemorySave = null;
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+                button.textContent = buttonText;
+                controls.forEach((el, i) => { el.disabled = disabledBefore[i]; });
+                document.getElementById('uploadProgress').style.display = 'none';
+            };
+            activeMemorySave = operation;
+            memorySaveAttempt += 1;
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+            button.textContent = '保存中…';
+            controls.forEach(el => { el.disabled = true; });
             document.getElementById('uploadProgress').style.display = 'block';
+            showStatus('status', '保存中です。完了までこの画面を閉じないでください。', false, 0);
 
-            let memory = memoryService.buildMemoryPayload({
-                title,
-                content,
-                category,
-                tags,
-                userId: savingUser.uid
-            });
-
-            if (locationPermission) {
-                try {
-                    memory = await memoryService.attachLocation(memory, {
-                        enabled: true,
-                        onStatusUpdate: (message) => {
-                            const el = document.getElementById('locationStatus');
-                            if (el) el.textContent = message;
-                        }
-                    });
-                } catch (error) {
-                    console.error('位置情報取得エラー:', error);
-                    showStatus('locationStatus', '位置情報を取得できませんでした', true);
-                }
-            }
-
-            if (imageFile) {
-                if (!sameUser()) return;
-                try {
-                    memory = await memoryService.attachImage(memory, {
-                        imageFile,
-                        currentUser: savingUser,
-                        onProgress: (progress) => {
-                            const el = document.getElementById('progressFill');
-                            if (el) el.style.width = progress + '%';
-                        },
-                        onResizeInfo: (info) => {
-                            const sizeMB = (info.resizedBytes / 1024 / 1024).toFixed(2);
-                            const originalSizeMB = (info.originalBytes / 1024 / 1024).toFixed(2);
-                            showStatus('status', `📸 画像を最適化しました (${originalSizeMB}MB → ${sizeMB}MB)`, false);
-                        }
-                    });
-                } catch (error) {
-                    showStatus('status', `⚠️ ${error.message}`, true);
-                }
-            }
-
-            if (!sameUser()) return;
+            let stored;
+            let destination;
+            let locationUnavailable = false;
             try {
-                await memoryService.saveForUser({ uid: savingUser.uid, memory });
-                if (!sameUser()) return;
-
-                showStatus('status', '✅ 保存成功！', false);
-
-                if (!isPremium) {
-                    var remaining = FREE_LIMIT - (memories.length + 1);
-                    if (remaining <= 10 && remaining >= 0 && typeof Toast !== 'undefined') {
-                        if (remaining === 0) {
-                            Toast.warning('無料プランの上限に達しました。プレミアムにアップグレードすると無制限に保存できます。', { title: '容量上限', duration: 6000 });
-                        } else {
-                            Toast.info('残り' + remaining + '件保存できます', { duration: 4000 });
-                        }
+                let memory = memoryService.buildMemoryPayload({ title, content, category, tags, userId: savingUser.uid });
+                if (locationPermission) {
+                    try {
+                        memory = await memoryService.attachLocation(memory, {
+                            enabled: true,
+                            onStatusUpdate: message => {
+                                if (sameUser()) document.getElementById('locationStatus').textContent = message;
+                            }
+                        });
+                    } catch (error) {
+                        console.error('位置情報取得エラー:', error);
+                        locationUnavailable = true;
                     }
                 }
-
-                if (typeof Analytics !== 'undefined') {
-                    Analytics.track('memory_create', { category: category });
+                if (!sameUser()) return;
+                if (imageFile) {
+                    memory = await memoryService.attachImage(memory, {
+                        imageFile, currentUser: savingUser,
+                        onProgress: progress => {
+                            if (sameUser()) document.getElementById('progressFill').style.width = progress + '%';
+                        }
+                    });
                 }
-
-                clearForm();
-                loadMemories();
+                if (!sameUser()) return;
+                try {
+                    stored = await memoryService.saveForUser({ uid: savingUser.uid, memory });
+                    destination = 'cloud';
+                } catch (error) {
+                    if (!sameUser()) return;
+                    // Only a failed cloud write may enter the local fallback.
+                    stored = memoryService.saveLocal(memory);
+                    destination = 'device';
+                }
             } catch (error) {
-                if (sameUser()) saveToLocal(memory);
+                console.error('記憶の保存エラー:', error);
+                if (sameUser()) {
+                    showStatus('status', '❌ 保存できませんでした。入力内容と選択した写真は残しています。この画面を閉じず、接続や端末の空き容量を確認してください。', true, 0);
+                }
+                return;
+            } finally {
+                operation.releaseUI();
             }
+            if (!sameUser()) return;
 
-            document.getElementById('uploadProgress').style.display = 'none';
+            // Persistence is confirmed. Rendering/analytics errors must never retry it.
+            memoryListRevision += 1;
+            clearForm();
+            const savedMessage = destination === 'cloud'
+                ? '✅ クラウドに保存しました。'
+                : '⚠️ この端末のブラウザーにのみ保存しました。クラウドには未同期で、自動同期は行われません。他の端末では見られません。ブラウザーのデータを消さないでください。';
+            showStatus('status', savedMessage + (locationUnavailable ? ' 位置情報は取得できなかったため含まれていません。' : ''), false, 0);
+            memories = [stored, ...memories.filter(m => m.id !== stored.id)];
+            try {
+                // Preserve existing device-only and legacy records when caching the new one.
+                const ids = new Set(memories.map(m => m.id));
+                memories.push(...memoryService.listLocal().filter(m => !ids.has(m.id)));
+                if (destination === 'cloud') memoryRepository.cacheForUser({ uid: savingUser.uid, memories });
+            } catch (error) {
+                console.warn('保存済みの日記の端末キャッシュを更新できませんでした:', error);
+            }
+            try {
+                displayMemories();
+                updatePremiumUI();
+            } catch (error) {
+                console.error('保存後の表示エラー:', error);
+                showStatus('status', savedMessage + ' 一覧の更新に失敗しました。再保存せず、画面を再読み込みしてください。', false, 0);
+            }
+            try {
+                if (typeof Analytics !== 'undefined') {
+                    Promise.resolve(Analytics.track('memory_create', { category, destination }))
+                        .catch(error => console.warn('保存後の計測エラー:', error));
+                }
+            } catch (error) {
+                console.warn('保存後の計測エラー:', error);
+            }
+            try {
+                const remaining = FREE_LIMIT - memories.length;
+                if (!isPremium && remaining <= 10 && remaining >= 0 && typeof Toast !== 'undefined') {
+                    if (remaining === 0) {
+                        Toast.warning('無料プランの上限に達しました。プレミアムにアップグレードすると無制限に保存できます。', { title: '容量上限', duration: 6000 });
+                    } else {
+                        Toast.info('残り' + remaining + '件保存できます', { duration: 4000 });
+                    }
+                }
+            } catch (error) {
+                console.warn('保存後の通知エラー:', error);
+            }
         }
         
         // Firebase Storageアップロード（30秒タイムアウト付き）
@@ -1035,33 +1089,35 @@
             return imageService.toBase64(file);
         }
         
-        // ローカルストレージに保存
-        function saveToLocal(memory) {
-            const stored = memoryService.saveLocal(memory);
-            memories = memoryService.listLocal();
-            showStatus('status', '✅ ローカルに保存しました', false);
-            displayMemories();
-            return stored;
-        }
-        
         // 記憶を読み込み
         async function loadMemories() {
             const user = currentUser;
             if (!user) return;
+            const revision = memoryListRevision;
+            const saveAttempt = memorySaveAttempt;
             
             try {
                 const loaded = await memoryService.listForUser({ uid: user.uid });
                 if (currentUser !== user || auth.currentUser !== user) return;
-                memories = loaded;
+                if (revision !== memoryListRevision) {
+                    // The response predates a save. Keep that save, but still show
+                    // older cloud diaries on a fresh device with an empty cache.
+                    const ids = new Set(memories.map(m => m.id));
+                    memories = [...memories, ...loaded.filter(m => !ids.has(m.id))];
+                } else {
+                    memories = loaded;
+                }
                 try {
                     memoryRepository.cacheForUser({ uid: user.uid, memories });
                     memories = memoryService.listLocal();
                 } catch {
                     // A full browser cache must not hide successfully loaded cloud photos.
-                    showStatus('status', '端末の保存容量が不足しています。クラウドの記憶を表示します。', true);
+                    if (!activeMemorySave && saveAttempt === memorySaveAttempt) {
+                        showStatus('status', '端末の保存容量が不足しています。クラウドの記憶を表示します。', true);
+                    }
                 }
             } catch (error) {
-                if (currentUser !== user || auth.currentUser !== user) return;
+                if (currentUser !== user || auth.currentUser !== user || revision !== memoryListRevision) return;
                 console.error('読み込みエラー:', error);
                 memories = memoryService.listLocal();
             }
@@ -1438,8 +1494,9 @@
         }
         
         // ステータス表示
-        function showStatus(elementId, message, isError) {
+        function showStatus(elementId, message, isError, duration = 5000) {
             const element = document.getElementById(elementId);
+            clearTimeout(element.statusTimeout);
             element.textContent = message;
             element.className = `mt-4 p-3 rounded-lg text-center font-semibold transition-all ${
                 isError 
@@ -1447,10 +1504,11 @@
                     : 'bg-green-500/20 text-green-300 border border-green-500/30'
             }`;
             
-            setTimeout(() => {
+            if (duration <= 0) return;
+            element.statusTimeout = setTimeout(() => {
                 element.textContent = '';
                 element.className = '';
-            }, 5000);
+            }, duration);
         }
         
         // HTMLエスケープ
